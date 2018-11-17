@@ -76,6 +76,9 @@ public:
 
                                               return semitonesText;
                                           };
+		addAndMakeVisible(reverseButton);
+		reverseButton.setButtonText("Reverse");
+		reverseButton.onClick = [this]() { updateTempoAndKey(); };
     }
 
     ~PitchAndTimeComponent()
@@ -101,13 +104,11 @@ public:
         }
 
         {
-            auto bottomR = r.removeFromBottom (60);
-            auto left = bottomR.removeFromLeft (bottomR.getWidth() / 2);
-            rootNoteEditor.setBounds (left.removeFromTop (left.getHeight() / 2).reduced (2));
-            rootTempoEditor.setBounds (left.reduced (2));
-
-            keySlider.setBounds (bottomR.removeFromTop (bottomR.getHeight() / 2).reduced (2));
-            tempoSlider.setBounds (bottomR.reduced (2));
+			rootNoteEditor.setBounds(1, getHeight() - 90, getWidth() / 2 - 2, 29);
+			keySlider.setBounds(rootNoteEditor.getRight() + 2, rootNoteEditor.getY(), getWidth() / 2 - 2, 29);
+			rootTempoEditor.setBounds(1, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
+			tempoSlider.setBounds(rootTempoEditor.getRight() + 2, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
+			reverseButton.setBounds(1, tempoSlider.getBottom() + 1, 100, 29);
         }
 
         thumbnail.setBounds (r.reduced (2));
@@ -127,7 +128,7 @@ private:
     Thumbnail thumbnail { transport };
     TextEditor rootNoteEditor, rootTempoEditor;
     Slider keySlider, tempoSlider;
-
+	ToggleButton reverseButton;
     //==============================================================================
     te::WaveAudioClip::Ptr getClip()
     {
@@ -154,7 +155,8 @@ private:
         if (auto clip = EngineHelpers::loadAudioFileAsClip (edit, f))
         {
             // Disable auto tempo and pitch, we'll handle these manually
-            clip->setAutoTempo (false);
+			
+			clip->setAutoTempo (false);
             clip->setAutoPitch (false);
             clip->setTimeStretchMode (te::TimeStretcher::defaultMode);
 
@@ -188,7 +190,7 @@ private:
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const double baseTempo = rootTempoEditor.getText().retainCharacters ("+-.0123456789").getDoubleValue();
 
-            // First update the tempo based on the ratio between the root tempo and tempo slider value
+			// First update the tempo based on the ratio between the root tempo and tempo slider value
             if (baseTempo > 0.0)
             {
                 const double ratio = tempoSlider.getValue() / baseTempo;
@@ -199,7 +201,9 @@ private:
             // Then update the pitch change based on the slider value
             clip->setPitchChange (float (keySlider.getValue()));
 
-            // Update the thumbnail to show the proxy render progress
+			clip->setIsReversed(reverseButton.getToggleState());
+			clip->updateSourceFile();
+			// Update the thumbnail to show the proxy render progress
             thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
         }
     }
