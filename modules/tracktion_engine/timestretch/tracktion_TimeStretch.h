@@ -29,12 +29,14 @@ public:
         elastiqueEfficient = 7,
         elastiqueMobile = 8,
         elastiqueMonophonic = 9,
-
+		rubberband = 100,
        #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
         defaultMode = elastiquePro
        #elif TRACKTION_ENABLE_TIMESTRETCH_SOUNDTOUCH
-        defaultMode = soundtouchBetter
-       #else
+		defaultMode = soundtouchBetter
+	   #elif TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
+		defaultMode = rubberband
+	   #else
         defaultMode = disabled
        #endif
     };
@@ -75,7 +77,19 @@ public:
     void processData (AudioFifo& inFifo, int numSamples, AudioFifo& outFifo);
     void flush (float* const* outChannels);
 
-    struct Stretcher;
+	struct Stretcher
+	{
+		virtual ~Stretcher() {}
+
+		virtual bool isOk() const = 0;
+		virtual void reset() = 0;
+		virtual bool setSpeedAndPitch(float speedRatio, float semitonesUp) = 0;
+		virtual int getFramesNeeded() const = 0;
+		virtual int getMaxFramesNeeded() const = 0;
+		virtual void processData(const float* const* inChannels, int numSamples, float* const* outChannels) = 0;
+		virtual void flush(float* const* outChannels) = 0;
+	};
+
 
 private:
     juce::ScopedPointer<Stretcher> stretcher;
@@ -83,6 +97,8 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TimeStretcher)
 };
+
+TimeStretcher::Stretcher* createRubber(double sr, int samplePerBlock, int numchans);
 
 } // namespace tracktion_engine
 

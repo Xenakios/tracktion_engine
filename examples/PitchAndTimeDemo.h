@@ -158,7 +158,8 @@ private:
 			
 			clip->setAutoTempo (false);
             clip->setAutoPitch (false);
-            clip->setTimeStretchMode (te::TimeStretcher::defaultMode);
+            clip->setTimeStretchMode (te::TimeStretcher::rubberband);
+			clip->setIsReversed(reverseButton.getToggleState());
 
             thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
 
@@ -202,9 +203,14 @@ private:
             clip->setPitchChange (float (keySlider.getValue()));
 
 			clip->setIsReversed(reverseButton.getToggleState());
-			clip->updateSourceFile();
+			Logger::writeToLog("Needs render " + String(clip->getHash()));
+			//clip->updateSourceFile();
 			// Update the thumbnail to show the proxy render progress
-            thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
+			
+			Timer::callAfterDelay(500, [this,clip]()
+			{
+				//thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+			});
         }
     }
 

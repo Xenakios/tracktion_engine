@@ -66,18 +66,6 @@ bool TimeStretcher::ElastiqueProOptions::operator!= (const ElastiqueProOptions& 
 }
 
 //==============================================================================
-struct TimeStretcher::Stretcher
-{
-    virtual ~Stretcher() {}
-
-    virtual bool isOk() const = 0;
-    virtual void reset() = 0;
-    virtual bool setSpeedAndPitch (float speedRatio, float semitonesUp) = 0;
-    virtual int getFramesNeeded() const = 0;
-    virtual int getMaxFramesNeeded() const = 0;
-    virtual void processData (const float* const* inChannels, int numSamples, float* const* outChannels) = 0;
-    virtual void flush (float* const* outChannels) = 0;
-};
 
 //==============================================================================
 #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
@@ -182,6 +170,7 @@ private:
 #endif
 
 //==============================================================================
+
 #if TRACKTION_ENABLE_TIMESTRETCH_SOUNDTOUCH
 
 #include "../3rd_party/soundtouch/include/SoundTouch.h"
@@ -334,6 +323,7 @@ static String getElastiqueMobile()      { return "Elastique (" + TRANS("Mobile")
 static String getElastiqueMono()        { return "Elastique (" + TRANS("Monophonic") + ")"; }
 static String getSoundTouchNormal()     { return "SoundTouch (" + TRANS("Normal") + ")"; }
 static String getSoundTouchBetter()     { return "SoundTouch (" + TRANS("Better") + ")"; }
+static String getRubberBand()			{ return "RubberBand"; }
 
 TimeStretcher::Mode TimeStretcher::checkModeIsAvailable (Mode m)
 {
@@ -357,6 +347,10 @@ TimeStretcher::Mode TimeStretcher::checkModeIsAvailable (Mode m)
         case soundtouchBetter:
             return m;
        #endif
+#if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
+		case rubberband:
+			return m;
+#endif
        #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
         case elastiquePro:
         case elastiqueEfficient:
@@ -384,7 +378,9 @@ StringArray TimeStretcher::getPossibleModes (Engine& e, bool excludeMelodyne)
     s.add (getSoundTouchNormal());
     s.add (getSoundTouchBetter());
    #endif
-
+	#if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
+	s.add(getRubberBand());
+	#endif
    #if TRACKTION_ENABLE_ARA
     if (! excludeMelodyne && e.getPluginManager().getARACompatiblePlugDescriptions().size() > 0)
         s.add (getMelodyne());
@@ -408,7 +404,9 @@ TimeStretcher::Mode TimeStretcher::getModeFromName (Engine& e, const String& nam
     if (name == getSoundTouchNormal())      return soundtouchNormal;
     if (name == getSoundTouchBetter())      return soundtouchBetter;
    #endif
-
+#if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
+	if (name == getRubberBand()) return rubberband;
+#endif
    #if TRACKTION_ENABLE_ARA
     if (name == getMelodyne())              return melodyne;
    #endif
@@ -428,7 +426,8 @@ String TimeStretcher::getNameOfMode (const Mode mode)
         case soundtouchNormal:      return getSoundTouchNormal();
         case soundtouchBetter:      return getSoundTouchBetter();
         case melodyne:              return getMelodyne();
-        default:                    jassertfalse; break;
+		case rubberband:			return getRubberBand();
+		default:                    jassertfalse; break;
     }
 
     return {};
@@ -480,7 +479,11 @@ void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
                                                  mode == soundtouchBetter);
             break;
        #endif
-
+#if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
+		case rubberband:
+			stretcher = createRubber(sourceSampleRate,samplesPerBlock, numChannels);
+			break;
+#endif
         default:
             break;
     }

@@ -100,9 +100,8 @@ bool AudioFile::deleteFile() const
     auto& afm = Engine::getInstance().getAudioFileManager();
     afm.checkFileForChangesAsync (*this);
     afm.releaseFile (*this);
-
-    bool ok = file.deleteFile();
-    jassert (ok);
+	bool ok = file.deleteFile();
+	jassert (ok);
     return ok;
 }
 

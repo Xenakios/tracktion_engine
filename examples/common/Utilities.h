@@ -156,7 +156,7 @@ struct Thumbnail    : public Component
             const float brightness = smartThumbnail.isOutOfDate() ? 0.4f : 0.66f;
             g.setColour (colour.withMultipliedBrightness (brightness));
             smartThumbnail.drawChannels (g, r, true, { 0.0, smartThumbnail.getTotalLength() }, 1.0f);
-        }
+		}
     }
 
     void mouseDown (const MouseEvent& e) override
