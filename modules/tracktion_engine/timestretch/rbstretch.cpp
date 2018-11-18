@@ -25,6 +25,7 @@ struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 	{
 		if (m_rb)
 			m_rb->reset();
+        m_proc_count = 0;
 	}
 	bool setSpeedAndPitch(float speedRatio, float semitonesUp) override
 	{
@@ -51,7 +52,7 @@ struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 		if (m_rb == nullptr)
 			return;
 		m_rb->process(inChannels, numSamples, false);
-		if (m_rb->available() >= numSamples)
+		if (m_rb->available() > numSamples)
 		{
 			int r = m_rb->retrieve(outChannels, numSamples);
 			jassert(r == numSamples);
@@ -70,6 +71,7 @@ struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 private:
 	std::unique_ptr<RubberBand::RubberBandStretcher> m_rb;
 	int m_max_samples = 0;
+    int m_proc_count = 0;
 };
 
 TimeStretcher::Stretcher* createRubber(double sr, int samplesPerBlock, int numchans)

@@ -56,9 +56,6 @@ using namespace juce;
  #include "3rd_party/soundtouch/source/SoundTouch/TDStretch.cpp"
 #endif
 
-#if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
- #include "timestretch/rbstretch.cpp"
-#endif
 
 #ifdef JUCE_MSVC
  #pragma warning (pop)
