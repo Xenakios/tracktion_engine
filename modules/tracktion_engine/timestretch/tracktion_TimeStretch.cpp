@@ -451,7 +451,7 @@ bool TimeStretcher::isInitialised() const
 void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
                                 int numChannels, Mode mode, ElastiqueProOptions options, bool realtime)
 {
-    juce::ignoreUnused (sourceSampleRate, numChannels, options, realtime);
+    juce::ignoreUnused (sourceSampleRate, numChannels, mode, options, realtime);
     jassert (! isMelodyne (mode));
 
     samplesPerBlockRequested = samplesPerBlock;
@@ -459,6 +459,7 @@ void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
     CRASH_TRACER
     jassert (stretcher == nullptr);
 
+   #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE || TRACKTION_ENABLE_TIMESTRETCH_SOUNDTOUCH
     switch (mode)
     {
        #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
@@ -487,6 +488,7 @@ void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
         default:
             break;
     }
+   #endif
 
     if (stretcher != nullptr)
         if (! stretcher->isOk())

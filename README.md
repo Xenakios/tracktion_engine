@@ -1,3 +1,9 @@
+![](tutorials/images/tracktion_engine_powered.png)
+
+master: [![Build Status](https://travis-ci.org/Tracktion/tracktion_engine.svg?branch=master)](https://travis-ci.org/Tracktion/tracktion_engine.svg?branch=master)
+
+develop: [![Build Status](https://travis-ci.org/Tracktion/tracktion_engine.svg?branch=develop)](https://travis-ci.org/Tracktion/tracktion_engine.svg?branch=develop)
+
 # tracktion_engine
 ##### Welcome to the Tracktion Engine repository!
 The aim of Tracktion Engine is to provide a high level data model and set of classes for building sequence based audio applications. You can build anything from a simple file-player or sequencer to a full blown DAW.
@@ -15,7 +21,7 @@ Tracktion Engine is supplied as a `JUCE module` so it can easily fit in to an ex
 
 To start with, clone the repo and recurse the submodules:
 ```
-$ git clone --recurse-submodules git@github.com:Tracktion/tracktion_engine.git
+$ git clone --recurse-submodules https://github.com/Tracktion/tracktion_engine.git
 ```
 
 ## Examples
