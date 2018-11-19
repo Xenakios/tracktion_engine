@@ -19,7 +19,7 @@
  #pragma comment (lib, "ippvm_l.lib")
 #endif
 
-TimeStretcher::ElastiqueProOptions::ElastiqueProOptions (const String& string)
+TimeStretcher::StretcherAdditionalOptions::StretcherAdditionalOptions (const String& string)
 {
     if (string.isEmpty())
         return;
@@ -37,30 +37,50 @@ TimeStretcher::ElastiqueProOptions::ElastiqueProOptions (const String& string)
             envelopeOrder        = tokens[4].getIntValue();
             return;
         }
-    }
+	}
+	else if (string.startsWith("1000/"))
+	{
+		StringArray tokens;
+		tokens.addTokens(string, "/", {});
+		if (tokens.size() == 2)
+		{
+			rubberBandOptions = tokens[1].getLargeIntValue();
+			return;
+		}
+	}
 
     jassertfalse; //unknown string format
 }
 
-String TimeStretcher::ElastiqueProOptions::toString() const
+String TimeStretcher::StretcherAdditionalOptions::toString() const
 {
-    // version / midside / sync / preserve / order
-    return String::formatted ("1/%d/%d/%d/%d",
-                              midSideStereo        ? 1 : 0,
-                              syncTimeStrPitchShft ? 1 : 0,
-                              preserveFormants     ? 1 : 0,
-                              envelopeOrder);
+	if (stretcherMode == elastiquePro)
+	{
+		// version / midside / sync / preserve / order
+		return String::formatted("1/%d/%d/%d/%d",
+			midSideStereo ? 1 : 0,
+			syncTimeStrPitchShft ? 1 : 0,
+			preserveFormants ? 1 : 0,
+			envelopeOrder);
+	}
+	else if (stretcherMode == rubberband)
+	{
+		return String::formatted("1000/%d", rubberBandOptions);
+	}
+	return String();
 }
 
-bool TimeStretcher::ElastiqueProOptions::operator== (const ElastiqueProOptions& other) const
+bool TimeStretcher::StretcherAdditionalOptions::operator== (const StretcherAdditionalOptions& other) const
 {
-    return midSideStereo        == other.midSideStereo
-        && syncTimeStrPitchShft == other.syncTimeStrPitchShft
-        && preserveFormants     == other.preserveFormants
-        && envelopeOrder        == other.envelopeOrder;
+	return midSideStereo == other.midSideStereo
+		&& syncTimeStrPitchShft == other.syncTimeStrPitchShft
+		&& preserveFormants == other.preserveFormants
+		&& envelopeOrder == other.envelopeOrder
+		&& stretcherMode == other.stretcherMode
+		&& rubberBandOptions == other.rubberBandOptions;
 }
 
-bool TimeStretcher::ElastiqueProOptions::operator!= (const ElastiqueProOptions& other) const
+bool TimeStretcher::StretcherAdditionalOptions::operator!= (const StretcherAdditionalOptions& other) const
 {
     return ! operator== (other);
 }
@@ -73,7 +93,7 @@ bool TimeStretcher::ElastiqueProOptions::operator!= (const ElastiqueProOptions& 
 struct ElastiqueStretcher  : public TimeStretcher::Stretcher
 {
     ElastiqueStretcher (double sourceSampleRate, int samplesPerBlock, int numChannels,
-                        TimeStretcher::Mode mode, TimeStretcher::ElastiqueProOptions options, float minFactor)
+                        TimeStretcher::Mode mode, TimeStretcher::StretcherAdditionalOptions options, float minFactor)
         : elastiqueMode (mode),
           elastiqueProOptions (options)
     {
@@ -150,7 +170,7 @@ struct ElastiqueStretcher  : public TimeStretcher::Stretcher
 private:
     CElastiqueProV3If* elastique = nullptr;
     TimeStretcher::Mode elastiqueMode;
-    TimeStretcher::ElastiqueProOptions elastiqueProOptions;
+    TimeStretcher::StretcherAdditionalOptions elastiqueProOptions;
 
     int maxFramesNeeded;
 
@@ -449,7 +469,7 @@ bool TimeStretcher::isInitialised() const
 }
 
 void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
-                                int numChannels, Mode mode, ElastiqueProOptions options, bool realtime)
+                                int numChannels, Mode mode, StretcherAdditionalOptions options, bool realtime)
 {
     juce::ignoreUnused (sourceSampleRate, numChannels, mode, options, realtime);
     jassert (! isMelodyne (mode));

@@ -15,7 +15,7 @@ struct PitchShiftPlugin::Pimpl
     {
     }
 
-    void initialise (double sr, float semitonesUp, TimeStretcher::Mode newMode, TimeStretcher::ElastiqueProOptions newOptions)
+    void initialise (double sr, float semitonesUp, TimeStretcher::Mode newMode, TimeStretcher::StretcherAdditionalOptions newOptions)
     {
         if (timestretcher == nullptr || mode != newMode || elastiqueOptions != newOptions)
         {
@@ -93,7 +93,7 @@ struct PitchShiftPlugin::Pimpl
 
     ScopedPointer<TimeStretcher> timestretcher;
     TimeStretcher::Mode mode;
-    TimeStretcher::ElastiqueProOptions elastiqueOptions;
+    TimeStretcher::StretcherAdditionalOptions elastiqueOptions;
 
     AudioFifo inputFifo { 2, 2000 }, outputFifo { 2, 2000 };
 

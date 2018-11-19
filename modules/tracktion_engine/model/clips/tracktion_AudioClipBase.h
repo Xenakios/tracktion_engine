@@ -297,7 +297,7 @@ public:
         EditTimeRange clipTime;
         double speedRatio;
         TimeStretcher::Mode mode;
-        TimeStretcher::ElastiqueProOptions options;
+        TimeStretcher::StretcherAdditionalOptions options;
 
         bool render (Engine&, const AudioFile&, AudioFileWriter&, juce::ThreadPoolJob* const&, std::atomic<float>& progress) const;
 
@@ -338,7 +338,7 @@ public:
     void showMelodyneWindow();
     void melodyneConvertToMIDI();
 
-    juce::CachedValue<TimeStretcher::ElastiqueProOptions> elastiqueProOptions;
+    juce::CachedValue<TimeStretcher::StretcherAdditionalOptions> elastiqueProOptions;
 
 protected:
     //==============================================================================

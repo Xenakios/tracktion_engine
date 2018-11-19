@@ -38,7 +38,7 @@ public:
 
     juce::CachedValue<float> semitonesValue;
     juce::CachedValue<int> mode;
-    juce::CachedValue<TimeStretcher::ElastiqueProOptions> elastiqueOptions;
+    juce::CachedValue<TimeStretcher::StretcherAdditionalOptions> elastiqueOptions;
     AutomatableParameter::Ptr semitones;
 
     static float getMaximumSemitones()   { return 2.0f * 12.0f; }

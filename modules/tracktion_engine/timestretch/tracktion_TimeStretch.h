@@ -41,19 +41,21 @@ public:
        #endif
     };
 
-    struct ElastiqueProOptions
+    struct StretcherAdditionalOptions
     {
-        ElastiqueProOptions() {}
-        ElastiqueProOptions (const juce::String& string);
+        StretcherAdditionalOptions() {}
+        StretcherAdditionalOptions (const juce::String& string);
 
         juce::String toString() const;
-        bool operator== (const ElastiqueProOptions& other) const;
-        bool operator!= (const ElastiqueProOptions& other) const;
+        bool operator== (const StretcherAdditionalOptions& other) const;
+        bool operator!= (const StretcherAdditionalOptions& other) const;
 
         bool midSideStereo = false;
         bool syncTimeStrPitchShft = false;
         bool preserveFormants = false;
         int envelopeOrder = 64;
+		Mode stretcherMode = elastiquePro;
+		int64_t rubberBandOptions = 0;
     };
 
     static Mode checkModeIsAvailable (Mode);
@@ -63,7 +65,7 @@ public:
     static bool isMelodyne (Mode mode);
 
     void initialise (double sourceSampleRate, int samplesPerBlock,
-                     int numChannels, Mode mode, ElastiqueProOptions options, bool realtime);
+                     int numChannels, Mode mode, StretcherAdditionalOptions options, bool realtime);
 
     bool isInitialised() const;
     void reset();
@@ -114,9 +116,9 @@ namespace juce
     };
 
     template <>
-    struct VariantConverter<tracktion_engine::TimeStretcher::ElastiqueProOptions>
+    struct VariantConverter<tracktion_engine::TimeStretcher::StretcherAdditionalOptions>
     {
-        static tracktion_engine::TimeStretcher::ElastiqueProOptions fromVar (const var& v) { return tracktion_engine::TimeStretcher::ElastiqueProOptions (v.toString()); }
-        static var toVar (const tracktion_engine::TimeStretcher::ElastiqueProOptions& v)   { return v.toString(); }
+        static tracktion_engine::TimeStretcher::StretcherAdditionalOptions fromVar (const var& v) { return tracktion_engine::TimeStretcher::StretcherAdditionalOptions (v.toString()); }
+        static var toVar (const tracktion_engine::TimeStretcher::StretcherAdditionalOptions& v)   { return v.toString(); }
     };
 }
