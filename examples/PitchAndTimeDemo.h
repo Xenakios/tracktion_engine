@@ -44,9 +44,17 @@ public:
 
         Helpers::addAndMakeVisible (*this,
                                     { &settingsButton, &playPauseButton, &loadFileButton, &thumbnail,
-                                      &rootNoteEditor, &rootTempoEditor, &keySlider, &tempoSlider });
-
-        settingsButton.onClick  = [this] { EngineHelpers::showAudioDeviceSettings (engine); };
+                                      &rootNoteEditor, &rootTempoEditor, &keySlider, &tempoSlider,& reverseButton, 
+							          &timePitchModeCombo });
+		auto modes = te::TimeStretcher::getPossibleModes(engine, true);
+		for (int i=0;i<modes.size();++i)
+		{
+			auto modetext = modes[i];
+			timePitchModeCombo.addItem(modetext, i + 1);
+		}
+		timePitchModeCombo.setSelectedId(3, dontSendNotification);
+		timePitchModeCombo.onChange = [this]() { updateTempoAndKey(); };
+		settingsButton.onClick  = [this] { EngineHelpers::showAudioDeviceSettings (engine); };
         playPauseButton.onClick = [this] { EngineHelpers::togglePlay (edit); };
         loadFileButton.onClick  = [this] { EngineHelpers::browseForAudioFile (engine, [this] (const File& f) { setFile (f); }); };
 
@@ -76,7 +84,7 @@ public:
 
                                               return semitonesText;
                                           };
-		addAndMakeVisible(reverseButton);
+		
 		reverseButton.setButtonText("Reverse");
 		reverseButton.onClick = [this]() { updateTempoAndKey(); };
     }
@@ -109,6 +117,7 @@ public:
 			rootTempoEditor.setBounds(1, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
 			tempoSlider.setBounds(rootTempoEditor.getRight() + 2, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
 			reverseButton.setBounds(1, tempoSlider.getBottom() + 1, 100, 29);
+			timePitchModeCombo.setBounds(reverseButton.getRight() + 2, tempoSlider.getBottom() + 1, 200, 29);
         }
 
         thumbnail.setBounds (r.reduced (2));
@@ -129,6 +138,7 @@ private:
     TextEditor rootNoteEditor, rootTempoEditor;
     Slider keySlider, tempoSlider;
 	ToggleButton reverseButton;
+	ComboBox timePitchModeCombo;
     //==============================================================================
     te::WaveAudioClip::Ptr getClip()
     {
@@ -190,7 +200,11 @@ private:
             auto f = getSourceFile();
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const double baseTempo = rootTempoEditor.getText().retainCharacters ("+-.0123456789").getDoubleValue();
-
+			auto modename = te::TimeStretcher::getNameOfMode(clip->getTimeStretchMode());
+			if (modename != timePitchModeCombo.getText())
+			{
+				clip->setTimeStretchMode(te::TimeStretcher::getModeFromName(engine,timePitchModeCombo.getText()));
+			}
 			// First update the tempo based on the ratio between the root tempo and tempo slider value
             if (baseTempo > 0.0)
             {
