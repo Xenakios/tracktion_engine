@@ -2,11 +2,11 @@
 #include <memory>
 
 
-#include "../JuceLibraryCode/JuceHeader.h"
-#include "RubberBandStretcher.h"
-//using namespace tracktion_engine;
-namespace tracktion_engine
-{
+//#include "../JuceLibraryCode/JuceHeader.h"
+//using namespace std;
+#include "src/rubberband/RubberBandStretcher.h"
+using namespace tracktion_engine;
+
 struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 {
 	RubberBandTimeStretcher(double sourceSampleRate, int samplesPerBlock, int numChannels, TimeStretcher::Mode mode)
@@ -78,5 +78,5 @@ TimeStretcher::Stretcher* createRubber(double sr, int samplesPerBlock, int numch
 	{
 		return new RubberBandTimeStretcher(sr, samplesPerBlock, numchans, TimeStretcher::rubberband);
 	}
-}
+
 #endif

@@ -56,7 +56,6 @@ using namespace juce;
  #include "3rd_party/soundtouch/source/SoundTouch/TDStretch.cpp"
 #endif
 
-
 #ifdef JUCE_MSVC
  #pragma warning (pop)
 #endif
@@ -66,5 +65,37 @@ using namespace juce;
 #endif
 
 }
+
+#if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
+ #ifdef JUCE_MSVC
+  #define __MSVC__
+ #endif
+ #define USE_KISSFFT
+ #define USE_SPEEX
+ #include "3rd_party/rubberband/rbstretch.cpp"
+ #include "3rd_party/rubberband/src/RubberBandStretcher.cpp"
+ #include "3rd_party/rubberband/src/StretchCalculator.cpp"
+ #include "3rd_party/rubberband/src/StretcherChannelData.cpp"
+ #include "3rd_party/rubberband/src/StretcherImpl.cpp"
+ #include "3rd_party/rubberband/src/StretcherProcess.cpp"
+ #include "3rd_party/rubberband/src/speex/resample.c"
+ #include "3rd_party/rubberband/src/kissfft/kiss_fft.c"
+ #include "3rd_party/rubberband/src/kissfft/kiss_fftr.c"
+ #include "3rd_party/rubberband/src/audiocurves/CompoundAudioCurve.cpp"
+ #include "3rd_party/rubberband/src/audiocurves/ConstantAudioCurve.cpp"
+ #include "3rd_party/rubberband/src/audiocurves/HighFrequencyAudioCurve.cpp"
+ #include "3rd_party/rubberband/src/audiocurves/PercussiveAudioCurve.cpp"
+ #include "3rd_party/rubberband/src/audiocurves/SilentAudioCurve.cpp"
+ #include "3rd_party/rubberband/src/audiocurves/SpectralDifferenceAudioCurve.cpp"
+ #include "3rd_party/rubberband/src/base/Profiler.cpp"
+ #include "3rd_party/rubberband/src/dsp/AudioCurveCalculator.cpp"
+ #include "3rd_party/rubberband/src/dsp/FFT.cpp"
+ #include "3rd_party/rubberband/src/dsp/Resampler.cpp"
+ #include "3rd_party/rubberband/src/system/Allocators.cpp"
+ #include "3rd_party/rubberband/src/system/sysutils.cpp"
+ #include "3rd_party/rubberband/src/system/Thread.cpp"
+ #include "3rd_party/rubberband/src/system/VectorOpsComplex.cpp"
+ 
+#endif
 
 #endif

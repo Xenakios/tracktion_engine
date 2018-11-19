@@ -98,9 +98,11 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TimeStretcher)
 };
 
-TimeStretcher::Stretcher* createRubber(double sr, int samplePerBlock, int numchans);
+
 
 } // namespace tracktion_engine
+
+tracktion_engine::TimeStretcher::Stretcher* createRubber(double sr, int samplePerBlock, int numchans);
 
 namespace juce
 {
