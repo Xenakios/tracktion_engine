@@ -218,13 +218,12 @@ private:
 
 			clip->setIsReversed(reverseButton.getToggleState());
 			Logger::writeToLog("Needs render " + String(clip->getHash()));
-			//clip->updateSourceFile();
+			
 			// Update the thumbnail to show the proxy render progress
 			
-			Timer::callAfterDelay(500, [this,clip]()
-			{
-				//thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
-			});
+			
+			thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+			
         }
     }
 
