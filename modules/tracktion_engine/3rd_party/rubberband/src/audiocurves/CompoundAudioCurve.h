@@ -24,10 +24,10 @@
 #ifndef _COMPOUND_AUDIO_CURVE_H_
 #define _COMPOUND_AUDIO_CURVE_H_
 
-#include "dsp/AudioCurveCalculator.h"
+#include "../dsp/AudioCurveCalculator.h"
 #include "PercussiveAudioCurve.h"
 #include "HighFrequencyAudioCurve.h"
-#include "dsp/SampleFilter.h"
+#include "../dsp/SampleFilter.h"
 
 namespace RubberBand
 {

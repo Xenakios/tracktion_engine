@@ -24,7 +24,7 @@
 #ifndef _RUBBERBAND_FFT_H_
 #define _RUBBERBAND_FFT_H_
 
-#include "system/sysutils.h"
+#include "../system/sysutils.h"
 
 #include <string>
 #include <set>
