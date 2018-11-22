@@ -24,7 +24,7 @@
 #ifndef _RUBBERBAND_RESAMPLER_H_
 #define _RUBBERBAND_RESAMPLER_H_
 
-#include "system/sysutils.h"
+#include "../system/sysutils.h"
 
 namespace RubberBand {
 

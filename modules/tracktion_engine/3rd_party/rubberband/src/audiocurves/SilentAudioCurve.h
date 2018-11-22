@@ -24,7 +24,7 @@
 #ifndef _SILENT_AUDIO_CURVE_H_
 #define _SILENT_AUDIO_CURVE_H_
 
-#include "dsp/AudioCurveCalculator.h"
+#include "../dsp/AudioCurveCalculator.h"
 
 namespace RubberBand
 {

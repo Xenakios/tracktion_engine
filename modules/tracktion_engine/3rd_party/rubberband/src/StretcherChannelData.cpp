@@ -29,10 +29,10 @@
 
 #include <algorithm>
 
-#ifdef __MSVC__
+//#ifdef __MSVC__
 #undef min
 #undef max
-#endif
+//#endif
 
 namespace RubberBand 
 {
