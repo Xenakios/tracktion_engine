@@ -2267,18 +2267,25 @@ struct StretchSegment
 
     void fillNextBlock()
     {
-        CRASH_TRACER
-        float* outs[] = { fifo.getWritePointer (0),
-                          fileInfo.numChannels > 1 ? fifo.getWritePointer (1) : nullptr,
-                          nullptr };
-
+		CRASH_TRACER
+			/*
+			float* outs[] = { fifo.getWritePointer (0),
+							  fileInfo.numChannels > 1 ? fifo.getWritePointer (1) : nullptr,
+							  nullptr };
+			*/
+			jassert(fifo.getNumChannels() == fileInfo.numChannels);
+		float* outs[64];
+		for (int i = 0; i < 64; ++i)
+			if (i < fileInfo.numChannels)
+				outs[i] = fifo.getWritePointer(i);
+			else outs[i] = nullptr;
         const int needed = timestretcher.getFramesNeeded();
 
         if (needed >= 0)
         {
             AudioScratchBuffer scratch (fileInfo.numChannels, needed);
-            const AudioChannelSet bufferChannels = AudioChannelSet::canonicalChannelSet (fileInfo.numChannels);
-            const AudioChannelSet channelsToUse = AudioChannelSet::stereo();
+            const AudioChannelSet bufferChannels = AudioChannelSet::discreteChannels(fileInfo.numChannels);
+			const AudioChannelSet channelsToUse = AudioChannelSet::discreteChannels(fileInfo.numChannels);
 
             if (needed > 0)
             {
@@ -2289,10 +2296,16 @@ struct StretchSegment
                #endif
             }
 
-            const float* ins[] = { scratch.buffer.getReadPointer (0),
+            /*
+			const float* ins[] = { scratch.buffer.getReadPointer (0),
                                    fileInfo.numChannels > 1 ? scratch.buffer.getReadPointer (1) : nullptr,
                                    nullptr };
-
+			*/
+			float* ins[64];
+			for (int i = 0; i < 64; ++i)
+				if (i < fileInfo.numChannels)
+					ins[i] = (float*)scratch.buffer.getReadPointer(i);
+				else ins[i] = nullptr;
             timestretcher.processData (ins, needed, outs);
         }
         else

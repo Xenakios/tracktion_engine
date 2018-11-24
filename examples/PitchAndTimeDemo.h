@@ -96,8 +96,9 @@ public:
 
     ~PitchAndTimeComponent()
     {
-        edit.getTempDirectory (false).deleteRecursively();
-    }
+		thumbnail.setFile({});
+		edit.getTempDirectory (false).deleteRecursively();
+	}
 
     //==============================================================================
     void paint (Graphics& g) override
