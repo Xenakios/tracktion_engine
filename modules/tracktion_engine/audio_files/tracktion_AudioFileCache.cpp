@@ -797,40 +797,68 @@ bool AudioFileCache::Reader::readSamples (int numSamples,
     // Xenakios 24th November 2018 : Why? What does the audio hardware device have to do with this??
 	if (true) // cache.engine.getEngineBehaviour().isDescriptionOfWaveDevicesSupported())
     {
-        static constexpr int maxNumChannels = 64;
-        float* chans[maxNumChannels] = {};
-        auto numSourceChans = std::min (maxNumChannels, sourceBufferChannels.size());
-        int highestUsedSourceChan = 0;
+		static constexpr int maxNumChannels = 64;
+		float* chans[maxNumChannels] = {};
+		auto numSourceChans = std::min(maxNumChannels, sourceBufferChannels.size());
+		if (getNumChannels() == 1 && destBufferChannels.size() > 1)
+		{
+			// Copy mono file channels to all destination channels, not correct always but will serve for now.
+			for (int i = 0; i < maxNumChannels; ++i)
+				if (i < numDestChans)
+					chans[i] = destBuffer.getWritePointer(i);
+				else chans[i] = nullptr;
+			if (readSamples((int**)chans, numDestChans, 0, numSamples, timeoutMs))
+			{
+				bool isFloatingPoint = (file != nullptr) ? static_cast<CachedFile*> (file)->info.isFloatingPoint
+					: fallbackReader->usesFloatingPointData;
 
-        for (int destIndex = 0; destIndex < numDestChans; ++destIndex)
-        {
-            auto destType = destBufferChannels.getTypeOfChannel (destIndex);
-            auto destData = destBuffer.getWritePointer (destIndex, startOffsetInDestBuffer);
-            auto sourceIndex = sourceBufferChannels.getChannelIndexForType (destType);
+				if (!isFloatingPoint)
+				{
+					auto chan = chans[0];
+					juce::FloatVectorOperations::convertFixedToFloat(chan, (const int*)chan, 1.0f / 0x7fffffff, numSamples);
+					for (int i = 1; i < numDestChans; ++i)
+						for (int j = 0; j < numSamples; ++j)
+							chans[i][j] = chans[0][j];
+							
+				}
+				return true;
+			}
+		}
+		else
+		{
+			
+			int highestUsedSourceChan = 0;
 
-            if (sourceIndex >= 0 && sourceIndex < maxNumChannels)
-            {
-                chans[sourceIndex] = destData;
-                highestUsedSourceChan = std::max (highestUsedSourceChan, sourceIndex);
-            }
-            else
-            {
-                juce::FloatVectorOperations::clear (destData, numSamples);
-            }
-        }
+			for (int destIndex = 0; destIndex < numDestChans; ++destIndex)
+			{
+				auto destType = destBufferChannels.getTypeOfChannel(destIndex);
+				auto destData = destBuffer.getWritePointer(destIndex, startOffsetInDestBuffer);
+				auto sourceIndex = sourceBufferChannels.getChannelIndexForType(destType);
 
-        if (readSamples ((int**) chans, numSourceChans, 0, numSamples, timeoutMs))
-        {
-            bool isFloatingPoint = (file != nullptr) ? static_cast<CachedFile*> (file)->info.isFloatingPoint
-                                                     : fallbackReader->usesFloatingPointData;
+				if (sourceIndex >= 0 && sourceIndex < maxNumChannels)
+				{
+					chans[sourceIndex] = destData;
+					highestUsedSourceChan = std::max(highestUsedSourceChan, sourceIndex);
+				}
+				else
+				{
+					juce::FloatVectorOperations::clear(destData, numSamples);
+				}
+			}
 
-            if (! isFloatingPoint)
-                for (int i = 0; i <= highestUsedSourceChan; ++i)
-                    if (auto chan = chans[i])
-                        juce::FloatVectorOperations::convertFixedToFloat (chan, (const int*) chan, 1.0f / 0x7fffffff, numSamples);
+			if (readSamples((int**)chans, numSourceChans, 0, numSamples, timeoutMs))
+			{
+				bool isFloatingPoint = (file != nullptr) ? static_cast<CachedFile*> (file)->info.isFloatingPoint
+					: fallbackReader->usesFloatingPointData;
 
-            return true;
-        }
+				if (!isFloatingPoint)
+					for (int i = 0; i <= highestUsedSourceChan; ++i)
+						if (auto chan = chans[i])
+							juce::FloatVectorOperations::convertFixedToFloat(chan, (const int*)chan, 1.0f / 0x7fffffff, numSamples);
+
+				return true;
+			}
+		}
     }
     else
     {
