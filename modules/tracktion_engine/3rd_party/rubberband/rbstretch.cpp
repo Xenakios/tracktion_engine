@@ -13,9 +13,7 @@ struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 	{
 		m_rb = std::make_unique<RubberBand::RubberBandStretcher>(sourceSampleRate, numChannels, 
 			RubberBand::RubberBandStretcher::OptionProcessRealTime);
-		m_max_samples = samplesPerBlock;
-		m_rb->setMaxProcessSize(samplesPerBlock);
-		
+		m_num_out_samples = samplesPerBlock;
 	}
 	bool isOk() const override
 	{
@@ -39,30 +37,42 @@ struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 	{
 		if (m_rb == nullptr)
 			return 0;
-		return m_max_samples;
+		if (m_rb->available()<m_num_out_samples)
+			return m_rb->getLatency() + m_num_out_samples;
+		return 0;
 	}
 	int getMaxFramesNeeded() const override
 	{
 		if (m_rb == nullptr)
 			return 0;
-		return m_max_samples;
+		return m_rb->getLatency();
 	}
+
+	void zeroOutBuffer(float* const* outChannelData, int numFrames, int numChannels)
+	{
+		for (int i = 0; i < numFrames; ++i)
+			for (int j = 0; j < numChannels; ++j)
+				outChannelData[j][i] = 0.0f;
+	}
+
 	void processData(const float* const* inChannels, int numSamples, float* const* outChannels) override
 	{
 		if (m_rb == nullptr)
 			return;
 		m_rb->process(inChannels, numSamples, false);
-		if (m_rb->available() > numSamples)
+		if (m_rb->available() >= m_num_out_samples)
 		{
-			int r = m_rb->retrieve(outChannels, numSamples);
-			jassert(r == numSamples);
+			int r = m_rb->retrieve(outChannels, m_num_out_samples);
+			if (r < m_num_out_samples)
+			{
+				Logger::writeToLog("RubberBand was requested " + String(m_num_out_samples) + " but produced " + String(r));
+			}
 		}
 		else
 		{
-			for (int i = 0; i < numSamples; ++i)
-				for (int j = 0; j < m_rb->getChannelCount(); ++j)
-					outChannels[j][i] = 0.0f;
+			zeroOutBuffer(outChannels, m_num_out_samples, m_rb->getChannelCount());
 		}
+		
 	}
 	void flush(float* const* /*outChannels*/) override
 	{
@@ -70,7 +80,7 @@ struct RubberBandTimeStretcher : public TimeStretcher::Stretcher
 	}
 private:
 	std::unique_ptr<RubberBand::RubberBandStretcher> m_rb;
-	int m_max_samples = 0;
+	int m_num_out_samples = 0;
     int m_proc_count = 0;
 };
 

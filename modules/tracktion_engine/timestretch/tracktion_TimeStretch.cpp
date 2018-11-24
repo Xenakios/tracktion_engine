@@ -38,7 +38,7 @@ TimeStretcher::StretcherAdditionalOptions::StretcherAdditionalOptions (const Str
             return;
         }
 	}
-	else if (string.startsWith("1000/"))
+	else if (string.startsWith("rb1/"))
 	{
 		StringArray tokens;
 		tokens.addTokens(string, "/", {});
@@ -65,7 +65,7 @@ String TimeStretcher::StretcherAdditionalOptions::toString() const
 	}
 	else if (stretcherMode == rubberband)
 	{
-		return String::formatted("1000/%d", rubberBandOptions);
+		return String::formatted("rb1/%d", rubberBandOptions);
 	}
 	return String();
 }

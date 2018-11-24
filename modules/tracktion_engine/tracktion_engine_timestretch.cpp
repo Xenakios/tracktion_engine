@@ -72,7 +72,9 @@ using namespace juce;
  #endif
  #define USE_KISSFFT
  #define USE_SPEEX
- #define USE_PTHREADS
+ #ifndef __MSVC__
+  #define USE_PTHREADS
+ #endif
  #include "3rd_party/rubberband/rbstretch.cpp"
  #include "3rd_party/rubberband/src/RubberBandStretcher.cpp"
  #include "3rd_party/rubberband/src/StretchCalculator.cpp"

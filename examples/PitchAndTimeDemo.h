@@ -170,12 +170,14 @@ private:
             clip->setAutoPitch (false);
             clip->setTimeStretchMode (te::TimeStretcher::rubberband);
 			clip->setIsReversed(reverseButton.getToggleState());
-
+			clip->setGainDB(-12.0f);
             thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
 
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const auto loopInfo = audioFileInfo.loopInfo;
-            const auto tempo = loopInfo.getBpm (audioFileInfo);
+            auto tempo = loopInfo.getBpm (audioFileInfo);
+			if (tempo < 1.0)
+				tempo = 120.0;
             rootNoteEditor.setText (TRANS("Root Key: ") + Helpers::getStringOrDefault (MidiMessage::getMidiNoteName (loopInfo.getRootNote(), true, false, 3), "Unknown"), false);
             rootTempoEditor.setText (TRANS("Root Tempo: ") + Helpers::getStringOrDefault (String (tempo, 2), "Unknown"), false);
 
@@ -212,6 +214,8 @@ private:
                 clip->setSpeedRatio (ratio);
                 clip->setLength (audioFileInfo.getLengthInSeconds() / clip->getSpeedRatio(), true);
             }
+
+			clip->setGainDB(-12.0f);
 
             // Then update the pitch change based on the slider value
             clip->setPitchChange (float (keySlider.getValue()));
