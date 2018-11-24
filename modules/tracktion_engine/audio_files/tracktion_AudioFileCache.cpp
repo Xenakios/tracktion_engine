@@ -795,9 +795,9 @@ bool AudioFileCache::Reader::readSamples (int numSamples,
 
     // This may need to deal with the generic surround case if destBuffer number of channels > channelsToUse.size()
     // Xenakios 24th November 2018 : Why? What does the audio hardware device have to do with this??
-	if (cache.engine.getEngineBehaviour().isDescriptionOfWaveDevicesSupported())
+	if (true) // cache.engine.getEngineBehaviour().isDescriptionOfWaveDevicesSupported())
     {
-        static constexpr int maxNumChannels = 32;
+        static constexpr int maxNumChannels = 64;
         float* chans[maxNumChannels] = {};
         auto numSourceChans = std::min (maxNumChannels, sourceBufferChannels.size());
         int highestUsedSourceChan = 0;
