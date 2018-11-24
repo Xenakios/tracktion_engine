@@ -37,21 +37,24 @@ public:
     //==============================================================================
     PitchAndTimeComponent()
     {
-        setSize (600, 400);
-
         transport.addChangeListener (this);
         updatePlayButtonText();
 
         Helpers::addAndMakeVisible (*this,
                                     { &settingsButton, &playPauseButton, &loadFileButton, &thumbnail,
                                       &rootNoteEditor, &rootTempoEditor, &keySlider, &tempoSlider,& reverseButton, 
-							          &timePitchModeCombo });
+							          &timePitchModeCombo, &volumeSlider });
 		auto modes = te::TimeStretcher::getPossibleModes(engine, true);
 		for (int i=0;i<modes.size();++i)
 		{
 			auto modetext = modes[i];
 			timePitchModeCombo.addItem(modetext, i + 1);
 		}
+		
+		volumeSlider.setRange(0.0, 1.0);
+		volumeSlider.onValueChange = [this]() { edit.setMasterVolumeSliderPos(volumeSlider.getValue()); };
+		volumeSlider.setValue(0.5);
+
 		timePitchModeCombo.setSelectedId(3, dontSendNotification);
 		timePitchModeCombo.onChange = [this]() { updateTempoAndKey(); };
 		settingsButton.onClick  = [this] { EngineHelpers::showAudioDeviceSettings (engine); };
@@ -87,6 +90,8 @@ public:
 		
 		reverseButton.setButtonText("Reverse");
 		reverseButton.onClick = [this]() { updateTempoAndKey(); };
+
+		setSize(900, 500);
     }
 
     ~PitchAndTimeComponent()
@@ -118,9 +123,11 @@ public:
 			tempoSlider.setBounds(rootTempoEditor.getRight() + 2, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
 			reverseButton.setBounds(1, tempoSlider.getBottom() + 1, 100, 29);
 			timePitchModeCombo.setBounds(reverseButton.getRight() + 2, tempoSlider.getBottom() + 1, 200, 29);
+			volumeSlider.setBounds(timePitchModeCombo.getRight()+2, tempoSlider.getBottom() + 1, 200, 29);
         }
 
-        thumbnail.setBounds (r.reduced (2));
+		thumbnail.setBounds(0, settingsButton.getBottom() + 2, getWidth(), 
+			getHeight()-(90 + settingsButton.getHeight()) - 10);
     }
 
 private:
@@ -136,7 +143,7 @@ private:
     TextButton settingsButton { "Settings" }, playPauseButton { "Play" }, loadFileButton { "Load file" };
     Thumbnail thumbnail { transport };
     TextEditor rootNoteEditor, rootTempoEditor;
-    Slider keySlider, tempoSlider;
+    Slider keySlider, tempoSlider, volumeSlider;
 	ToggleButton reverseButton;
 	ComboBox timePitchModeCombo;
     //==============================================================================
