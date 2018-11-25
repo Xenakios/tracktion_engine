@@ -37,7 +37,15 @@ public:
     //==============================================================================
     PitchAndTimeComponent()
     {
-        transport.addChangeListener (this);
+		setWantsKeyboardFocus(true);
+		engine.getDeviceManager().setWaveOutChannelsEnabled(
+			{
+				{0, AudioChannelSet::left},
+				{1, AudioChannelSet::right},
+				{2, AudioChannelSet::leftSurround},
+				{3, AudioChannelSet::rightSurround},
+			},true);
+		transport.addChangeListener (this);
         updatePlayButtonText();
 
         Helpers::addAndMakeVisible (*this,
