@@ -19,7 +19,10 @@
  #pragma comment (lib, "ippvm_l.lib")
 #endif
 
-TimeStretcher::StretcherAdditionalOptions::StretcherAdditionalOptions (const String& string)
+namespace tracktion_engine
+{
+
+TimeStretcher::StretcherAdditionalOptions::StretcherAdditionalOptions(const String& string)
 {
     if (string.isEmpty())
         return;
@@ -578,4 +581,6 @@ void TimeStretcher::flush (float* const* outChannels)
 {
     if (stretcher != nullptr)
         stretcher->flush (outChannels);
+}
+
 }

@@ -7,6 +7,9 @@
 */
 
 
+namespace tracktion_engine
+{
+
 struct ExternalPlugin::ProcessorChangedManager  : public juce::AudioProcessorListener
 {
     ProcessorChangedManager (ExternalPlugin& p) : plugin (p)
@@ -198,9 +201,9 @@ class ExternalPlugin::PluginPlayHead  : public juce::AudioPlayHead
 public:
     PluginPlayHead (ExternalPlugin& p, PlayHead& ph)  : plugin (p), playhead (ph)
     {
-        currentPos = new TempoSequencePosition (plugin.edit.tempoSequence);
-        loopStart  = new TempoSequencePosition (plugin.edit.tempoSequence);
-        loopEnd    = new TempoSequencePosition (plugin.edit.tempoSequence);
+        currentPos = std::make_unique<TempoSequencePosition> (plugin.edit.tempoSequence);
+        loopStart  = std::make_unique<TempoSequencePosition> (plugin.edit.tempoSequence);
+        loopEnd    = std::make_unique<TempoSequencePosition> (plugin.edit.tempoSequence);
     }
 
     /** @warning Because some idiotic plugins call getCurrentPosition on the message thread, we can't keep a
@@ -209,8 +212,6 @@ public:
     */
     void setCurrentContext (const AudioRenderContext* rc)
     {
-        const ScopedLock sl (infoLock);
-
         if (rc != nullptr)
         {
             time        = rc->getEditTime().editRange1.getStart();
@@ -231,16 +232,10 @@ public:
         if (currentPos == nullptr)
             return false;
 
-        double localTime = 0.0;
-
-        {
-            const ScopedLock sl (infoLock);
-            result.isPlaying = isPlaying;
-            localTime = time;
-        }
-
         auto& transport = plugin.edit.getTransport();
+        double localTime = time;
 
+        result.isPlaying        = isPlaying;
         result.isRecording      = transport.isRecording();
         result.editOriginTime   = transport.getTimeWhenStarted();
         result.isLooping        = playhead.isLooping();
@@ -272,10 +267,9 @@ public:
 private:
     ExternalPlugin& plugin;
     PlayHead& playhead;
-    ScopedPointer<TempoSequencePosition> currentPos, loopStart, loopEnd;
-    CriticalSection infoLock;
-    double time = 0;
-    bool isPlaying = false;
+    std::unique_ptr<TempoSequencePosition> currentPos, loopStart, loopEnd;
+    std::atomic<double> time { 0 };
+    std::atomic<bool> isPlaying { false };
 
     AudioPlayHead::FrameRateType getFrameRate() const
     {
@@ -752,7 +746,7 @@ void ExternalPlugin::doFullInitialisation()
                 juce::VSTPluginFormat::setExtraFunctions (pluginInstance.get(), new ExtraVSTCallbacks (edit));
                #endif
 
-                pluginInstance->setPlayHead (playhead);
+                pluginInstance->setPlayHead (playhead.get());
                 supportsMPE = pluginInstance->supportsMPE();
             }
             else
@@ -992,7 +986,7 @@ void ExternalPlugin::initialise (const PlaybackInitialisationInfo& info)
     const ScopedLock sl (lock);
 
     if (mpeRemapper == nullptr)
-        mpeRemapper = new MPEChannelRemapper();
+        mpeRemapper = std::make_unique<MPEChannelRemapper>();
 
     mpeRemapper->reset();
 
@@ -1010,12 +1004,12 @@ void ExternalPlugin::initialise (const PlaybackInitialisationInfo& info)
         }
 
         pluginInstance->setPlayHead (nullptr);
-        playhead = new PluginPlayHead (*this, info.playhead);
-        pluginInstance->setPlayHead (playhead);
+        playhead = std::make_unique<PluginPlayHead> (*this, info.playhead);
+        pluginInstance->setPlayHead (playhead.get());
     }
     else
     {
-        playhead = nullptr;
+        playhead.reset();
         latencySamples = 0;
         latencySeconds = 0.0;
     }
@@ -1459,7 +1453,7 @@ bool ExternalPlugin::setBusesLayout (juce::AudioProcessor::BusesLayout layout)
         std::unique_ptr<Edit::ScopedRenderStatus> srs;
 
         if (! baseClassNeedsInitialising())
-            srs = std::make_unique<Edit::ScopedRenderStatus> (edit);
+            srs = std::make_unique<Edit::ScopedRenderStatus> (edit, true);
 
         jassert (baseClassNeedsInitialising());
 
@@ -1490,7 +1484,7 @@ bool ExternalPlugin::setBusLayout (AudioChannelSet set, bool isInput, int busInd
             std::unique_ptr<Edit::ScopedRenderStatus> srs;
 
             if (! baseClassNeedsInitialising())
-                srs = std::make_unique<Edit::ScopedRenderStatus> (edit);
+                srs = std::make_unique<Edit::ScopedRenderStatus> (edit, true);
 
             jassert (baseClassNeedsInitialising());
 
@@ -1629,4 +1623,6 @@ void ExternalPlugin::valueTreePropertyChanged (ValueTree& v, const Identifier& i
     {
         Plugin::valueTreePropertyChanged (v, id);
     }
+}
+
 }

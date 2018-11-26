@@ -7,6 +7,9 @@
 */
 
 
+namespace tracktion_engine
+{
+
 RenderManager::Job::Ptr EditRenderJob::getOrCreateRenderJob (Engine& e, Renderer::Parameters& params,
                                                              bool deleteEdit, bool silenceOnBackup, bool reverse)
 {
@@ -123,6 +126,7 @@ bool EditRenderJob::setUpRender()
     }
 
     CRASH_TRACER
+    callBlocking ([this] { renderStatus = std::make_unique<Edit::ScopedRenderStatus> (*params.edit, false); });
 
     if (params.separateTracks)
         renderSeparateTracks();
@@ -409,4 +413,6 @@ bool EditRenderJob::generateSilence (const File& fileToWriteTo)
     }
 
     return true;
+}
+
 }

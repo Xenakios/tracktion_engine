@@ -7,6 +7,9 @@
 */
 
 
+namespace tracktion_engine
+{
+
 struct LiveMidiInjectingAudioNode  : public SingleInputAudioNode
 {
     LiveMidiInjectingAudioNode (AudioTrack* t, AudioNode* source)
@@ -1263,7 +1266,7 @@ void AudioTrack::freezeTrack()
     r.useMasterPlugins = false;
     r.addAntiDenormalisationNoise = EditPlaybackContext::shouldAddAntiDenormalisationNoise (edit.engine);
 
-    const Edit::ScopedRenderStatus srs (edit);
+    const Edit::ScopedRenderStatus srs (edit, true);
     auto renderedItem = Renderer::renderToProjectItem (TRANS("Creating track freeze for \"XDVX\"")
                                                         .replace ("XDVX", getName()) + "...", r);
 
@@ -1435,4 +1438,6 @@ juce::Array<Track*> AudioTrack::findSidechainSourceTracks() const
     }
 
     return srcTracks;
+}
+
 }

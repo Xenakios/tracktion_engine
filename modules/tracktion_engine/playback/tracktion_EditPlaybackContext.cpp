@@ -7,6 +7,9 @@
 */
 
 
+namespace tracktion_engine
+{
+
 std::function<AudioNode*(AudioNode*)> EditPlaybackContext::insertOptionalLastStageNode = [] (AudioNode* input)    { return input; };
 
 //==============================================================================
@@ -32,8 +35,16 @@ EditPlaybackContext::EditPlaybackContext (TransportControl& tc)
 {
     rebuildDeviceList();
 
+    if (edit.isRendering())
+    {
+        jassertfalse;
+        TRACKTION_LOG_ERROR("EditPlaybackContext created whilst rendering");
+    }
+
     if (edit.shouldPlay())
+    {
         edit.engine.getDeviceManager().addContext (this);
+    }
 }
 
 EditPlaybackContext::~EditPlaybackContext()
@@ -756,3 +767,5 @@ EditPlaybackContext::RealtimePriorityDisabler::RealtimePriorityDisabler()    {}
 EditPlaybackContext::RealtimePriorityDisabler::~RealtimePriorityDisabler()   {}
 
 #endif
+
+}

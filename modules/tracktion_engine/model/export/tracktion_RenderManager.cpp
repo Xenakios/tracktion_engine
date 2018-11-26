@@ -7,6 +7,9 @@
 */
 
 
+namespace tracktion_engine
+{
+
 RenderManager::Job::Job (Engine& e, const AudioFile& proxyToUse)
     : ThreadPoolJobWithProgress ("Render Job"),
       engine (e), proxy (proxyToUse)
@@ -178,7 +181,7 @@ void RenderManager::cleanUp()
     jassert (jobs.isEmpty());
 
     for (int i = danglingJobs.size(); --i >= 0;)
-        if (auto* j = danglingJobs.getUnchecked (i))
+        if (auto j = danglingJobs.getUnchecked (i))
             j->cleanUpDanglingJob();
 
     jassert (danglingJobs.isEmpty());
@@ -279,4 +282,6 @@ void RenderManager::handleAsyncUpdate()
 {
     const ScopedLock sl (deleteListLock);
     jobsToDelete.clear();
+}
+
 }

@@ -34,10 +34,10 @@ class PitchAndTimeComponent   : public Component,
                                 private ChangeListener
 {
 public:
-    //==============================================================================
-    PitchAndTimeComponent()
+	PitchAndTimeComponent()
     {
 		setWantsKeyboardFocus(true);
+		
 		engine.getDeviceManager().setWaveOutChannelsEnabled(
 			{
 				{0, AudioChannelSet::left},
