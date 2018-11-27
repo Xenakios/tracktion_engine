@@ -4,11 +4,12 @@
 
  BEGIN_JUCE_PIP_METADATA
 
-  name:             PitchAndTimeDemo
+  name:             PitchTimeAndPluginsDemo
   version:          0.0.1
-  vendor:           Tracktion
-  website:          www.tracktion.com
-  description:      This example shows how to load an audio clip and adjust its speed and pitch so you can play along with it in a different key or tempo.
+  vendor:           Tracktion/Xenakios
+  website:          www.tracktion.com / https://xenakios.wordpress.com/
+  description:      This example shows how to load an audio clip and adjust its speed and pitch,
+                    as well as play it in reverse and add plugins into it.
 
   dependencies:     juce_audio_basics, juce_audio_devices, juce_audio_formats, juce_audio_processors, juce_audio_utils,
                     juce_core, juce_data_structures, juce_dsp, juce_events, juce_graphics,
