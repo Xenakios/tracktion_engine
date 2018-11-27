@@ -133,7 +133,7 @@ public:
 		volumeSlider.onValueChange = [this]() { edit.setMasterVolumeSliderPos(volumeSlider.getValue()); };
 		volumeSlider.setValue(0.5);
 
-		timePitchModeCombo.setSelectedId(3, dontSendNotification);
+		timePitchModeCombo.setSelectedId(1, dontSendNotification);
 		timePitchModeCombo.onChange = [this]() { updateTempoAndKey(); };
 		settingsButton.onClick  = [this] { EngineHelpers::showAudioDeviceSettings (engine); };
         playPauseButton.onClick = [this] { EngineHelpers::togglePlay (edit); };
@@ -299,7 +299,7 @@ private:
 			
 			clip->setAutoTempo (false);
             clip->setAutoPitch (false);
-            clip->setTimeStretchMode (te::TimeStretcher::rubberband);
+            clip->setTimeStretchMode (te::TimeStretcher::defaultMode);
 			clip->setIsReversed(reverseButton.getToggleState());
 			clip->setGainDB(-12.0f);
 			thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
