@@ -28,16 +28,129 @@
 
 #include "common/Utilities.h"
 
+class PluginWindow : public DocumentWindow
+{
+public:
+	PluginWindow(te::Plugin& p) : DocumentWindow(p.getName(),Colours::cyan,0), m_plugin(p) 
+	{
+		te::ExternalPlugin* inst = dynamic_cast<te::ExternalPlugin*>(&p);
+		m_ed = inst->getAudioPluginInstance()->createEditorIfNeeded();
+		setContentOwned(m_ed,true);
+		m_slave = std::make_unique<te::PluginWindowConnection::Slave>(*this);
+	}
+	te::PluginWindowConnection::Slave* getSlaveConnection()
+	{
+		return m_slave.get();
+	}
+private:
+	te::Plugin& m_plugin;
+	AudioProcessorEditor* m_ed = nullptr;
+	std::unique_ptr<te::PluginWindowConnection::Slave> m_slave;
+};
+
+te::PluginWindowConnection::Master* createExternalPluginConnection(te::Plugin::WindowState& ws)
+{
+	auto w = std::make_unique<PluginWindow>(ws.plugin);
+
+	if (w->getContentComponent() == nullptr)
+		w.reset();
+
+	auto slave = w != nullptr ? w->getSlaveConnection() : nullptr;
+
+	return new te::PluginWindowConnection::Master(ws, ws.plugin.edit, w.release(), slave);
+}
+
+class MyUIBehaviour : public tracktion_engine::UIBehaviour
+{
+public:
+	te::PluginWindowConnection::Master* createPluginWindowConnection(te::PluginWindowState& pws) override
+	{
+		if (auto ws = dynamic_cast<te::Plugin::WindowState*> (&pws))
+			return createExternalPluginConnection(*ws);
+
+		return nullptr;
+	}
+};
 
 //==============================================================================
 class PitchAndTimeComponent   : public Component,
                                 private ChangeListener
 {
 public:
-	PitchAndTimeComponent()
+	PitchAndTimeComponent() :
+		engine(ProjectInfo::projectName, std::make_unique<MyUIBehaviour>(), std::make_unique<te::EngineBehaviour>()),
+		selectionManager(engine)
     {
-		setWantsKeyboardFocus(true);
 		
+		pluginsButton.onClick = [this]
+		{
+			DialogWindow::LaunchOptions o;
+			o.dialogTitle = TRANS("Plugins");
+			o.dialogBackgroundColour = Colours::black;
+			o.escapeKeyTriggersCloseButton = true;
+			o.useNativeTitleBar = true;
+			o.resizable = true;
+			o.useBottomRightCornerResizer = true;
+
+			auto v = new PluginListComponent(engine.getPluginManager().pluginFormatManager,
+				engine.getPluginManager().knownPluginList,
+				engine.getTemporaryFileManager().getTempFile("PluginScanDeadMansPedal"),
+				te::getApplicationSettings());
+			v->setSize(800, 600);
+			o.content.setOwned(v);
+			o.launchAsync();
+		};
+		
+		addPluginButton.onClick = [this]()
+		{
+			auto clip = getClip();
+			if (clip != nullptr)
+			{
+				PopupMenu plugmenu;
+				engine.getPluginManager().knownPluginList.addToMenu(plugmenu, KnownPluginList::sortAlphabetically);
+				int r = plugmenu.show();
+				if (r > 0)
+				{
+					int plugId = engine.getPluginManager().knownPluginList.getIndexChosenByMenu(r);
+					auto plugDesc = engine.getPluginManager().knownPluginList.getType(plugId);
+					if (plugDesc != nullptr)
+					{
+						Logger::writeToLog(plugDesc->name);
+						auto plugInst = edit.getPluginCache().createNewPlugin(te::ExternalPlugin::xmlTypeName, 
+							*plugDesc);
+						if (plugInst != nullptr)
+						{
+							String canAdd = clip->canAddClipPlugin(*plugInst);
+							if (canAdd.isEmpty())
+							{
+								bool suc = clip->addClipPlugin(plugInst, selectionManager);
+								if (!suc)
+								{
+									Logger::writeToLog("Could not add plugin to clip");
+								}
+								else
+								{
+									plugInst->showWindowExplicitly();
+									thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+								}
+							}
+							else
+							{
+								Logger::writeToLog("can add clip plugin error : " + canAdd);
+							}
+						}
+						else
+						{
+							Logger::writeToLog("Could not create plugin");
+						}
+						
+					}
+				}
+			}
+			
+		};
+		
+		setWantsKeyboardFocus(true);
 		engine.getDeviceManager().setWaveOutChannelsEnabled(
 			{
 				{0, AudioChannelSet::left},
@@ -51,7 +164,7 @@ public:
         Helpers::addAndMakeVisible (*this,
                                     { &settingsButton, &playPauseButton, &loadFileButton, &thumbnail,
                                       &rootNoteEditor, &rootTempoEditor, &keySlider, &tempoSlider,& reverseButton, 
-							          &timePitchModeCombo, &volumeSlider });
+							          &timePitchModeCombo, &volumeSlider,&pluginsButton,&addPluginButton });
 		auto modes = te::TimeStretcher::getPossibleModes(engine, true);
 		for (int i=0;i<modes.size();++i)
 		{
@@ -133,6 +246,8 @@ public:
 			reverseButton.setBounds(1, tempoSlider.getBottom() + 1, 100, 29);
 			timePitchModeCombo.setBounds(reverseButton.getRight() + 2, tempoSlider.getBottom() + 1, 200, 29);
 			volumeSlider.setBounds(timePitchModeCombo.getRight()+2, tempoSlider.getBottom() + 1, 200, 29);
+			pluginsButton.setBounds(volumeSlider.getRight() + 2, tempoSlider.getBottom() + 1, 150, 29);
+			addPluginButton.setBounds(pluginsButton.getRight() + 2, tempoSlider.getBottom() + 1, 150, 29);
         }
 
 		thumbnail.setBounds(0, settingsButton.getBottom() + 2, getWidth(), 
@@ -141,11 +256,11 @@ public:
 
 private:
     //==============================================================================
-    te::Engine engine { ProjectInfo::projectName };
+	te::Engine engine;
     te::Edit edit { engine, te::createEmptyEdit(), te::Edit::forEditing, nullptr, 0 };
     te::TransportControl& transport { edit.getTransport() };
-
-    FileChooser audioFileChooser { "Please select an audio file to load...",
+	te::SelectionManager selectionManager;
+	FileChooser audioFileChooser { "Please select an audio file to load...",
                                    engine.getPropertyStorage().getDefaultLoadSaveDirectory ("pitchAndTimeExample"),
                                    engine.getAudioFileFormatManager().readFormatManager.getWildcardForAllFormats() };
 
@@ -155,7 +270,9 @@ private:
     Slider keySlider, tempoSlider, volumeSlider;
 	ToggleButton reverseButton;
 	ComboBox timePitchModeCombo;
-    //==============================================================================
+	TextButton pluginsButton{ "Plugin manager..." };
+	TextButton addPluginButton{ "Add plugin..." };
+	//==============================================================================
     te::WaveAudioClip::Ptr getClip()
     {
         if (auto track = edit.getOrInsertAudioTrackAt (0))
@@ -187,7 +304,7 @@ private:
             clip->setTimeStretchMode (te::TimeStretcher::rubberband);
 			clip->setIsReversed(reverseButton.getToggleState());
 			clip->setGainDB(-12.0f);
-            thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
+			thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
 
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const auto loopInfo = audioFileInfo.loopInfo;
