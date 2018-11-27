@@ -234,27 +234,21 @@ public:
     void resized() override
     {
         auto r = getLocalBounds();
-
-        {
-            auto topR = r.removeFromTop (30);
-            settingsButton.setBounds (topR.removeFromLeft (topR.getWidth() / 3).reduced (2));
-            playPauseButton.setBounds (topR.removeFromLeft (topR.getWidth() / 2).reduced (2));
-            loadFileButton.setBounds (topR.reduced (2));
-        }
-
-        {
-			rootNoteEditor.setBounds(1, getHeight() - 90, getWidth() / 2 - 2, 29);
-			keySlider.setBounds(rootNoteEditor.getRight() + 2, rootNoteEditor.getY(), getWidth() / 2 - 2, 29);
-			rootTempoEditor.setBounds(1, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
-			tempoSlider.setBounds(rootTempoEditor.getRight() + 2, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
-			reverseButton.setBounds(1, tempoSlider.getBottom() + 1, 100, 29);
-			timePitchModeCombo.setBounds(reverseButton.getRight() + 2, tempoSlider.getBottom() + 1, 200, 29);
-			volumeSlider.setBounds(timePitchModeCombo.getRight()+2, tempoSlider.getBottom() + 1, 200, 29);
-			pluginsButton.setBounds(volumeSlider.getRight() + 2, tempoSlider.getBottom() + 1, 150, 29);
-			addPluginButton.setBounds(pluginsButton.getRight() + 2, tempoSlider.getBottom() + 1, 150, 29);
-        }
-
-		thumbnail.setBounds(0, settingsButton.getBottom() + 2, getWidth(), 
+		
+        auto topR = r.removeFromTop (30);
+        settingsButton.setBounds (topR.removeFromLeft (topR.getWidth() / 3).reduced (2));
+        playPauseButton.setBounds (topR.removeFromLeft (topR.getWidth() / 2).reduced (2));
+        loadFileButton.setBounds (topR.reduced (2));
+        rootNoteEditor.setBounds(1, getHeight() - 90, getWidth() / 2 - 2, 29);
+		keySlider.setBounds(rootNoteEditor.getRight() + 2, rootNoteEditor.getY(), getWidth() / 2 - 2, 29);
+		rootTempoEditor.setBounds(1, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
+		tempoSlider.setBounds(rootTempoEditor.getRight() + 2, rootNoteEditor.getBottom() + 1, getWidth() / 2 - 2, 29);
+		reverseButton.setBounds(1, tempoSlider.getBottom() + 1, 100, 29);
+		timePitchModeCombo.setBounds(reverseButton.getRight() + 2, tempoSlider.getBottom() + 1, 200, 29);
+		volumeSlider.setBounds(timePitchModeCombo.getRight()+2, tempoSlider.getBottom() + 1, 200, 29);
+		pluginsButton.setBounds(volumeSlider.getRight() + 2, tempoSlider.getBottom() + 1, 150, 29);
+		addPluginButton.setBounds(pluginsButton.getRight() + 2, tempoSlider.getBottom() + 1, 150, 29);
+        thumbnail.setBounds(0, settingsButton.getBottom() + 2, getWidth(), 
 			getHeight()-(90 + settingsButton.getHeight()) - 10);
     }
 
