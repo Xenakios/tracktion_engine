@@ -103,51 +103,7 @@ public:
 		
 		addPluginButton.onClick = [this]()
 		{
-			auto clip = getClip();
-			if (clip != nullptr)
-			{
-				PopupMenu plugmenu;
-				engine.getPluginManager().knownPluginList.addToMenu(plugmenu, KnownPluginList::sortAlphabetically);
-				int r = plugmenu.show();
-				if (r > 0)
-				{
-					int plugId = engine.getPluginManager().knownPluginList.getIndexChosenByMenu(r);
-					auto plugDesc = engine.getPluginManager().knownPluginList.getType(plugId);
-					if (plugDesc != nullptr)
-					{
-						Logger::writeToLog(plugDesc->name);
-						auto plugInst = edit.getPluginCache().createNewPlugin(te::ExternalPlugin::xmlTypeName, 
-							*plugDesc);
-						if (plugInst != nullptr)
-						{
-							String canAdd = clip->canAddClipPlugin(*plugInst);
-							if (canAdd.isEmpty())
-							{
-								bool suc = clip->addClipPlugin(plugInst, selectionManager);
-								if (!suc)
-								{
-									Logger::writeToLog("Could not add plugin to clip");
-								}
-								else
-								{
-									plugInst->showWindowExplicitly();
-									thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
-								}
-							}
-							else
-							{
-								Logger::writeToLog("can add clip plugin error : " + canAdd);
-							}
-						}
-						else
-						{
-							Logger::writeToLog("Could not create plugin");
-						}
-						
-					}
-				}
-			}
-			
+			showPluginMenu();
 		};
 		
 		setWantsKeyboardFocus(true);
@@ -226,6 +182,53 @@ public:
     {
         g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
     }
+
+	void showPluginMenu()
+	{
+		auto clip = getClip();
+		if (clip != nullptr)
+		{
+			PopupMenu plugmenu;
+			engine.getPluginManager().knownPluginList.addToMenu(plugmenu, KnownPluginList::sortAlphabetically);
+			int r = plugmenu.show();
+			if (r > 0)
+			{
+				int plugId = engine.getPluginManager().knownPluginList.getIndexChosenByMenu(r);
+				auto plugDesc = engine.getPluginManager().knownPluginList.getType(plugId);
+				if (plugDesc != nullptr)
+				{
+					auto plugInst = edit.getPluginCache().createNewPlugin(te::ExternalPlugin::xmlTypeName,
+						*plugDesc);
+					if (plugInst != nullptr)
+					{
+						String canAdd = clip->canAddClipPlugin(*plugInst);
+						if (canAdd.isEmpty())
+						{
+							bool suc = clip->addClipPlugin(plugInst, selectionManager);
+							if (!suc)
+							{
+								Logger::writeToLog("Could not add plugin to clip");
+							}
+							else
+							{
+								plugInst->showWindowExplicitly();
+								thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+							}
+						}
+						else
+						{
+							Logger::writeToLog("can add clip plugin error : " + canAdd);
+						}
+					}
+					else
+					{
+						Logger::writeToLog("Could not create plugin");
+					}
+
+				}
+			}
+		}
+	}
 
     void resized() override
     {
