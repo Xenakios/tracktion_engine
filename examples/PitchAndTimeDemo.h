@@ -82,7 +82,6 @@ public:
 		engine(ProjectInfo::projectName, std::make_unique<MyUIBehaviour>(), std::make_unique<te::EngineBehaviour>()),
 		selectionManager(engine)
     {
-		
 		pluginsButton.onClick = [this]
 		{
 			DialogWindow::LaunchOptions o;
