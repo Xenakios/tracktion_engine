@@ -107,13 +107,6 @@ public:
 		};
 		
 		setWantsKeyboardFocus(true);
-		engine.getDeviceManager().setWaveOutChannelsEnabled(
-			{
-				{0, AudioChannelSet::left},
-				{1, AudioChannelSet::right},
-				{2, AudioChannelSet::leftSurround},
-				{3, AudioChannelSet::rightSurround},
-			},true);
 		transport.addChangeListener (this);
         updatePlayButtonText();
 
@@ -305,7 +298,9 @@ private:
 			if (clip->canHaveEffects())
 			{
 				clip->enableEffects(true, false);
-				te::ClipEffect::createEffectAndAddToValueTree(edit, clip->state, te::ClipEffect::EffectType::reverse, 0);
+				te::ClipEffect::createEffectAndAddToValueTree(edit,
+                                                              clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::stepVolume, -1);
+                
 			}
 			else
 				Logger::writeToLog("Can't have clip effect");
