@@ -301,6 +301,16 @@ private:
             clip->setTimeStretchMode (te::TimeStretcher::defaultMode);
 			clip->setIsReversed(reverseButton.getToggleState());
 			clip->setGainDB(-12.0f);
+			
+			if (clip->canHaveEffects())
+			{
+				clip->enableEffects(true, false);
+				te::ClipEffect::createEffectAndAddToValueTree(edit, clip->state, te::ClipEffect::EffectType::reverse, 0);
+			}
+			else
+				Logger::writeToLog("Can't have clip effect");
+			
+			
 			thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
 
             const auto audioFileInfo = te::AudioFile (f).getInfo();
