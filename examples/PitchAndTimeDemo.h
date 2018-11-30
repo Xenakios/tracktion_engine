@@ -167,7 +167,10 @@ public:
     ~PitchAndTimeComponent()
     {
 		thumbnail.setFile({});
-		edit.getTempDirectory (false).deleteRecursively();
+		transport.freePlaybackContext();
+		engine.getAudioFileManager().releaseAllFiles();
+		if (edit.getTempDirectory(false).deleteRecursively())
+			Logger::writeToLog("Could not delete files");
 	}
 
     //==============================================================================
@@ -305,8 +308,10 @@ private:
 			else
 				Logger::writeToLog("Can't have clip effect");
 			
-			
-			thumbnail.setFile (EngineHelpers::loopAroundClip (*clip)->getPlaybackFile());
+			Timer::callAfterDelay(500, [this,clip]()
+			{
+				thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+			});
 
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const auto loopInfo = audioFileInfo.loopInfo;
