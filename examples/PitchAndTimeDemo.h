@@ -181,11 +181,10 @@ public:
 
 	void showPluginMenu()
 	{
-		auto clip = getClip();
-		if (clip != nullptr)
+		if (auto clip = getClip())
 		{
 			PopupMenu plugmenu;
-			engine.getPluginManager().knownPluginList.addToMenu(plugmenu, KnownPluginList::sortAlphabetically);
+			engine.getPluginManager().knownPluginList.addToMenu(plugmenu, KnownPluginList::sortByManufacturer);
 			int r = plugmenu.show();
 			if (r > 0)
 			{
