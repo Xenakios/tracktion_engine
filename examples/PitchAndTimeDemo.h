@@ -311,7 +311,7 @@ private:
 			{
 				clip->enableEffects(true, false);
 				te::ClipEffect::createEffectAndAddToValueTree(edit,
-                                                              clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::stepVolume, -1);
+                  clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
                 
 			}
 			else

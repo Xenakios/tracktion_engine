@@ -137,7 +137,7 @@ struct VariantConverter<tracktion_engine::ClipEffect::EffectType>
         if (s == "reverse")             return ClipEffect::EffectType::reverse;
         if (s == "invert")              return ClipEffect::EffectType::invert;
         if (s == "filter")              return ClipEffect::EffectType::filter;
-
+		if (s == "commandLineProcess")  return ClipEffect::EffectType::commandLineProcess;
         return ClipEffect::EffectType::none;
     }
 
@@ -159,6 +159,7 @@ struct VariantConverter<tracktion_engine::ClipEffect::EffectType>
             case ClipEffect::EffectType::reverse:           return "reverse";
             case ClipEffect::EffectType::invert:            return "invert";
             case ClipEffect::EffectType::filter:            return "filter";
+			case ClipEffect::EffectType::commandLineProcess: return "commandLineProcess";
         }
 
         return {};
@@ -1450,6 +1451,63 @@ String NormaliseEffect::getSelectableDescription()
     return TRANS("Normalise Effect Editor");
 }
 
+struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::ClipEffectRenderJob
+{
+	CommandLineProcessJob(Engine& e, const AudioFile& dest, const AudioFile& src, double srcLen)
+		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen)
+	{
+
+	}
+	bool setUpRender() override
+	{
+		return true;
+	}
+	bool completeRender() override
+	{
+		return processOk;
+	}
+	bool renderNextBlock() override
+	{
+		StringArray args;
+		args.add("C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\modify.exe");
+		args.add("radical");
+		args.add("2"); // shred mode
+		args.add(source.getFile().getFullPathName());
+		// The CDP programs refuse to overwrite files, so need to delete the possibly existing file first
+		if (destination.getFile().existsAsFile())
+		{
+			if (destination.deleteFile() == false)
+			{
+				Logger::writeToLog("Could not delete dest file for CDP");
+				processOk = false;
+				return true;
+			}
+		}
+		args.add(destination.getFile().getFullPathName());
+		args.add("4"); // num repeats
+		args.add("0.33"); // chunklen
+		ChildProcess cp;
+		if (cp.start(args) == false)
+		{
+			processOk = false;
+			return true;
+		}
+		cp.waitForProcessToFinish(30000);
+		// Checking for 0 does not necessarily work, the process output should be searched for words like "error", "fail",
+		// "invalid", "could not" etc
+		if (cp.getExitCode() != 0) 
+		{
+			processOk = false;
+			Logger::writeToLog(cp.readAllProcessOutput());
+		} else
+			processOk = true;
+		return true;
+	}
+private:
+	bool processOk = false;
+	double sourceLen = 0.0;
+};
+
 CommandLineProcessEffect::CommandLineProcessEffect(const juce::ValueTree & vt, ClipEffects &ce)
 	: ClipEffect(vt, ce)
 {
@@ -1457,11 +1515,17 @@ CommandLineProcessEffect::CommandLineProcessEffect(const juce::ValueTree & vt, C
 
 CommandLineProcessEffect::~CommandLineProcessEffect()
 {
+	notifyListenersOfDeletion();
 }
+
+
 
 juce::ReferenceCountedObjectPtr<ClipEffect::ClipEffectRenderJob> CommandLineProcessEffect::createRenderJob(const AudioFile & sourceFile, double sourceLength)
 {
-	return juce::ReferenceCountedObjectPtr<ClipEffectRenderJob>();
+	CRASH_TRACER
+
+	return new CommandLineProcessJob(edit.engine, getDestinationFile(),
+			sourceFile, sourceLength);
 }
 
 bool CommandLineProcessEffect::hasProperties()
@@ -1469,13 +1533,14 @@ bool CommandLineProcessEffect::hasProperties()
 	return false;
 }
 
-void CommandLineProcessEffect::propertiesButtonPressed(SelectionManager &)
+void CommandLineProcessEffect::propertiesButtonPressed(SelectionManager& sm)
 {
+	sm.selectOnly(this);
 }
 
 juce::String CommandLineProcessEffect::getSelectableDescription()
 {
-	return juce::String();
+	return TRANS("Command Line Process Effect Editor");
 }
 
 //==============================================================================
