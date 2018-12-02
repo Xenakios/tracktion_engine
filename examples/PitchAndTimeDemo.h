@@ -28,6 +28,7 @@
 #pragma once
 
 #include "common/Utilities.h"
+#include "expected.hpp"
 
 class PluginWindow : public DocumentWindow
 {
@@ -178,7 +179,7 @@ public:
     {
         g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
     }
-
+	
 	void showPluginMenu()
 	{
 		if (auto clip = getClip())
@@ -273,6 +274,15 @@ private:
 
         return {};
     }
+
+	tl::expected<te::WaveAudioClip::Ptr,String> getClip2()
+	{
+		if (auto track = edit.getOrInsertAudioTrackAt(0))
+			if (auto clip = dynamic_cast<te::WaveAudioClip*> (track->getClips()[0]))
+				return clip;
+
+		return tl::make_unexpected(String("No clip"));
+	}
 
     File getSourceFile()
     {

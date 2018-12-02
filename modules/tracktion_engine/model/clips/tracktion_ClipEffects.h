@@ -6,7 +6,6 @@
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
 */
 
-
 namespace tracktion_engine
 {
 
@@ -30,8 +29,9 @@ public:
         reverse,
         invert,
         filter,
+		commandLineProcess,
         firstEffect     = volume,
-        lastEffect      = filter
+        lastEffect      = commandLineProcess
     };
 
     static juce::ValueTree create (EffectType);
@@ -528,6 +528,19 @@ private:
     struct NormaliseRenderJob;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NormaliseEffect)
+};
+
+struct CommandLineProcessEffect : public ClipEffect, public Selectable
+{
+	CommandLineProcessEffect(const juce::ValueTree&, ClipEffects&);
+	~CommandLineProcessEffect();
+	juce::ReferenceCountedObjectPtr<ClipEffectRenderJob> createRenderJob(const AudioFile& sourceFile, double sourceLength) override;
+	bool hasProperties() override;
+	void propertiesButtonPressed(SelectionManager&) override;
+	juce::String getSelectableDescription() override;
+private:
+	struct CommandLineProcessJob;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CommandLineProcessEffect)
 };
 
 //==============================================================================

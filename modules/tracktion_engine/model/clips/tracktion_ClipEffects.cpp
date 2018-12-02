@@ -1450,6 +1450,34 @@ String NormaliseEffect::getSelectableDescription()
     return TRANS("Normalise Effect Editor");
 }
 
+CommandLineProcessEffect::CommandLineProcessEffect(const juce::ValueTree & vt, ClipEffects &ce)
+	: ClipEffect(vt, ce)
+{
+}
+
+CommandLineProcessEffect::~CommandLineProcessEffect()
+{
+}
+
+juce::ReferenceCountedObjectPtr<ClipEffect::ClipEffectRenderJob> CommandLineProcessEffect::createRenderJob(const AudioFile & sourceFile, double sourceLength)
+{
+	return juce::ReferenceCountedObjectPtr<ClipEffectRenderJob>();
+}
+
+bool CommandLineProcessEffect::hasProperties()
+{
+	return false;
+}
+
+void CommandLineProcessEffect::propertiesButtonPressed(SelectionManager &)
+{
+}
+
+juce::String CommandLineProcessEffect::getSelectableDescription()
+{
+	return juce::String();
+}
+
 //==============================================================================
 struct MakeMonoEffect::MakeMonoRenderJob : public BlockBasedRenderJob
 {
@@ -1653,7 +1681,8 @@ ClipEffect* ClipEffect::create (const ValueTree& v, ClipEffects& ce)
         case EffectType::reverse:           return new ReverseEffect (v, ce);
         case EffectType::invert:            return new InvertEffect (v, ce);
         case EffectType::filter:            return new PluginEffect (v, ce);
-        default:                            jassertfalse; return {};
+		case EffectType::commandLineProcess: return new CommandLineProcessEffect(v, ce);
+		default:                            jassertfalse; return {};
     }
 }
 
