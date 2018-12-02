@@ -530,6 +530,17 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NormaliseEffect)
 };
 
+/**
+Processes the file through an external command line program like one of the CDP (Composer's Desktop Project) programs,
+Csound or Sox. The parameters for the processing need to be provided at the moment in the command line template
+string but ideally should provide some kind of mechanism to have the parameters be dynamic.
+Should also support processing stereo and multichannel files with the CDP programs that are mono-only but
+that's kind of messy because the N-channel file needs to be split into mono files first, those then need to
+be processed with the CDP program and finally merged into a N-channel file again. Also the CDP programs
+have spectral processing programs that do not accept PCM files directly but need to be analysed into PVOC 
+files first and finally resynthesised back to PCM after the processing. And those spectral programs themselves
+would need the split N-channel processing...Sigh.
+*/
 struct CommandLineProcessEffect : public ClipEffect, public Selectable
 {
 	CommandLineProcessEffect(const juce::ValueTree&, ClipEffects&);
