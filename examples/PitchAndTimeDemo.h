@@ -312,7 +312,12 @@ private:
 				clip->enableEffects(true, false);
 				te::ClipEffect::createEffectAndAddToValueTree(edit,
                   clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
-                
+				String cmdlinetemplate = "modify radical 2 $INFILE $OUTFILE 4 0.33";
+				clip->state.getChildWithName(te::IDs::EFFECTS).getChild(0).setProperty("cmdline", cmdlinetemplate, nullptr);
+				cmdlinetemplate = "modify brassage 5 $INFILE $OUTFILE 0.8";
+				te::ClipEffect::createEffectAndAddToValueTree(edit,
+					clip->state.getChildWithName(te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
+				clip->state.getChildWithName(te::IDs::EFFECTS).getChild(1).setProperty("cmdline", cmdlinetemplate, nullptr);
 			}
 			else
 				Logger::writeToLog("Can't have clip effect");

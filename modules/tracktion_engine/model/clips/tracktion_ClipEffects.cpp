@@ -1453,8 +1453,8 @@ String NormaliseEffect::getSelectableDescription()
 
 struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::ClipEffectRenderJob
 {
-	CommandLineProcessJob(Engine& e, const AudioFile& dest, const AudioFile& src, double srcLen)
-		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen)
+	CommandLineProcessJob(Engine& e, const AudioFile& dest, const AudioFile& src, double srcLen, String cmdLine)
+		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen), cmdLineTemplate(cmdLine)
 	{
 
 	}
@@ -1468,11 +1468,10 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 	}
 	bool renderNextBlock() override
 	{
-		StringArray args;
-		args.add("C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\modify.exe");
-		args.add("radical");
-		args.add("2"); // shred mode
-		args.add(source.getFile().getFullPathName());
+		Logger::writeToLog("Starting cmdline process render...");
+		String cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdLineTemplate;
+		cmdline = cmdline.replace("$INFILE", "\""+source.getFile().getFullPathName()+"\"");
+		cmdline = cmdline.replace("$OUTFILE", "\"" + destination.getFile().getFullPathName() + "\"");
 		// The CDP programs refuse to overwrite files, so need to delete the possibly existing file first
 		if (destination.getFile().existsAsFile())
 		{
@@ -1483,11 +1482,9 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 				return true;
 			}
 		}
-		args.add(destination.getFile().getFullPathName());
-		args.add("4"); // num repeats
-		args.add("0.33"); // chunklen
+		Logger::writeToLog(cmdline);
 		ChildProcess cp;
-		if (cp.start(args) == false)
+		if (cp.start(cmdline) == false)
 		{
 			processOk = false;
 			return true;
@@ -1506,6 +1503,7 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 private:
 	bool processOk = false;
 	double sourceLen = 0.0;
+	String cmdLineTemplate;
 };
 
 CommandLineProcessEffect::CommandLineProcessEffect(const juce::ValueTree & vt, ClipEffects &ce)
@@ -1525,7 +1523,7 @@ juce::ReferenceCountedObjectPtr<ClipEffect::ClipEffectRenderJob> CommandLineProc
 	CRASH_TRACER
 
 	return new CommandLineProcessJob(edit.engine, getDestinationFile(),
-			sourceFile, sourceLength);
+			sourceFile, sourceLength, state.getProperty("cmdline"));
 }
 
 bool CommandLineProcessEffect::hasProperties()
