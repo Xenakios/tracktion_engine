@@ -28,7 +28,7 @@
 #pragma once
 
 #include "common/Utilities.h"
-#include "expected.hpp"
+//#include "expected.hpp"
 
 class PluginWindow : public DocumentWindow
 {
@@ -275,14 +275,7 @@ private:
         return {};
     }
 
-	tl::expected<te::WaveAudioClip::Ptr,String> getClip2()
-	{
-		if (auto track = edit.getOrInsertAudioTrackAt(0))
-			if (auto clip = dynamic_cast<te::WaveAudioClip*> (track->getClips()[0]))
-				return clip;
-
-		return tl::make_unexpected(String("No clip"));
-	}
+	
 
     File getSourceFile()
     {
@@ -312,12 +305,13 @@ private:
 				clip->enableEffects(true, false);
 				te::ClipEffect::createEffectAndAddToValueTree(edit,
                   clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
-				String cmdlinetemplate = "modify radical 2 $INFILE $OUTFILE 4 0.33";
-				clip->state.getChildWithName(te::IDs::EFFECTS).getChild(0).setProperty("cmdline", cmdlinetemplate, nullptr);
+				//String cmdlinetemplate = "modify radical 2 $INFILE $OUTFILE 4 0.33";
+                String cmdlinetemplate = "spec/4096/3 : blur blur $INFILE $OUTFILE 200.0";
+                clip->state.getChildWithName(te::IDs::EFFECTS).getChild(0).setProperty("cmdline", cmdlinetemplate, nullptr);
 				cmdlinetemplate = "modify brassage 5 $INFILE $OUTFILE 0.8";
-				te::ClipEffect::createEffectAndAddToValueTree(edit,
-					clip->state.getChildWithName(te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
-				clip->state.getChildWithName(te::IDs::EFFECTS).getChild(1).setProperty("cmdline", cmdlinetemplate, nullptr);
+				//te::ClipEffect::createEffectAndAddToValueTree(edit,
+				//	clip->state.getChildWithName(te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
+				//clip->state.getChildWithName(te::IDs::EFFECTS).getChild(1).setProperty("cmdline", cmdlinetemplate, nullptr);
 			}
 			else
 				Logger::writeToLog("Can't have clip effect");

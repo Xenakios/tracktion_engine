@@ -1466,12 +1466,98 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 	{
 		return processOk;
 	}
+    File doPvocAnalysis(int fftsize, int olaps)
+    {
+        jassert(fftsize>0 && fftsize<8193);
+        jassert(olaps>0 && olaps<5);
+        ChildProcess cp;
+        File pvoc_out = engine.getTemporaryFileManager().getTempFile("cdp-temp0.ana");
+        if (pvoc_out.existsAsFile())
+            pvoc_out.deleteFile();
+#ifdef JUCE_WINDOWS
+        String cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdLineTemplate;
+#else
+        /*
+        String cmdline = String::formatted("/Users/teemu/CDP_bin/pvoc anal 1 \"%s\" \"%s\" -c%d -o%d",
+                                           source.getFile().getFullPathName().toRawUTF8(),
+                                           pvoc_out.getFullPathName().toRawUTF8(),
+                                           fftsize,olaps);
+        */
+        String cmdline = String::formatted("/Users/teemu/CDP_bin/pvoc anal 1 %s %s -c%d -o%d",
+                                           source.getFile().getFullPathName().toRawUTF8(),
+                                           pvoc_out.getFullPathName().toRawUTF8(),
+                                           fftsize,olaps);
+#endif
+        Logger::writeToLog(cmdline);
+        cp.start(cmdline);
+        cp.waitForProcessToFinish(30000);
+        if (pvoc_out.existsAsFile())
+            return pvoc_out;
+        Logger::writeToLog(cp.readAllProcessOutput());
+        return File();
+    }
+    bool doPvocResynth(File src)
+    {
+        ChildProcess cp;
+        
+        if (destination.getFile().existsAsFile())
+            destination.deleteFile();
+#ifdef JUCE_WINDOWS
+        String cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdLineTemplate;
+#else
+        String cmdline = String::formatted("/Users/teemu/CDP_bin/pvoc synth %s %s",
+                                           src.getFullPathName().toRawUTF8(),
+                                           destination.getFile().getFullPathName().toRawUTF8());
+        
+#endif
+        Logger::writeToLog(cmdline);
+        cp.start(cmdline);
+        cp.waitForProcessToFinish(30000);
+        if (destination.getFile().existsAsFile())
+            return true;
+        Logger::writeToLog(cp.readAllProcessOutput());
+        return false;
+    }
 	bool renderNextBlock() override
 	{
-		Logger::writeToLog("Starting cmdline process render...");
-		String cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdLineTemplate;
-		cmdline = cmdline.replace("$INFILE", "\""+source.getFile().getFullPathName()+"\"");
-		cmdline = cmdline.replace("$OUTFILE", "\"" + destination.getFile().getFullPathName() + "\"");
+		processOk = false;
+        Logger::writeToLog("Starting cmdline process render...");
+        String cmdline;
+        File infiletouse = source.getFile();
+        File outfiletouse = destination.getFile();
+        String cmdTemplateToUse = cmdLineTemplate;
+        int fftsize = 0;
+        if (cmdTemplateToUse.startsWith("spec"))
+        {
+            String specparstr = cmdTemplateToUse.upToFirstOccurrenceOf(" :", false, true);
+            StringArray pars = StringArray::fromTokens(specparstr, "/", "");
+            if (pars.size()>=3)
+            {
+                fftsize = pars[1].getIntValue();
+                int fftoverlaps = pars[2].getIntValue();
+                File pvocfile = doPvocAnalysis(fftsize, fftoverlaps);
+                if (pvocfile!=File())
+                {
+                    infiletouse = pvocfile;
+                    outfiletouse = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
+                    cmdTemplateToUse = cmdTemplateToUse.fromFirstOccurrenceOf(" : ", false, true);
+                } else
+                {
+                    return true;
+                }
+            } else
+            {
+                return true;
+            }
+        }
+        
+#ifdef JUCE_WINDOWS
+        cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdTemplateToUse;
+#else
+        cmdline = "/Users/teemu/CDP_bin/" + cmdTemplateToUse;
+#endif
+		cmdline = cmdline.replace("$INFILE", infiletouse.getFullPathName());
+		cmdline = cmdline.replace("$OUTFILE", outfiletouse.getFullPathName());
 		// The CDP programs refuse to overwrite files, so need to delete the possibly existing file first
 		if (destination.getFile().existsAsFile())
 		{
@@ -1498,7 +1584,17 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 			Logger::writeToLog(cp.readAllProcessOutput());
 		} else
 			processOk = true;
-		return true;
+		if (fftsize>0)
+        {
+            if (doPvocResynth(outfiletouse))
+            {
+                processOk = true;
+            } else
+            {
+                processOk = false;
+            }
+        }
+        return true;
 	}
 private:
 	bool processOk = false;
