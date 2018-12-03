@@ -1529,15 +1529,16 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 				resultfiles.push_back(infile);
 				return resultfiles;
 			}
-			std::vector<std::pair<FileOutputStream*, AudioFormatWriter*>> writers(nchs);
+			using upwriter = std::unique_ptr<AudioFormatWriter>;
+			std::vector<std::pair<FileOutputStream*, upwriter>> writers(nchs);
 			int fails = 0;
 			for (int i = 0; i < nchs; ++i)
 			{
 				resultfiles[i] = engine.getTemporaryFileManager().
 					getTempFile(infile.getFileNameWithoutExtension() + "-chan" + String(i)+".wav");
 				writers[i].first = resultfiles[i].createOutputStream();
-				writers[i].second = wavformat.createWriterFor(writers[i].first,
-					reader->sampleRate, 1, 32, {}, 0);
+				writers[i].second = upwriter(wavformat.createWriterFor(writers[i].first,
+					reader->sampleRate, 1, 32, {}, 0));
 				if (writers[i].second == nullptr)
 				{
 					delete writers[i].first;
@@ -1560,10 +1561,6 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 					writers[i].second->writeFromAudioSampleBuffer(writebuf, 0, numtoread);
 				}
 				pos += blocksize;
-			}
-			for (int i = 0; i < nchs; ++i)
-			{
-				delete writers[i].second;
 			}
 			return resultfiles;
 		}
