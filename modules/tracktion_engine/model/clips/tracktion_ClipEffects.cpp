@@ -1491,22 +1491,22 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 		args.getReference(0) = getCDPPath() + args[0];
 		return args;
 	}
-    std::pair<File,String> runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
+    File runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
     {
         if (outputfile.existsAsFile())
             outputfile.deleteFile();
-        if (inputfile.existsAsFile()==false)
-            return {File(),String()};
+		if (inputfile.existsAsFile() == false)
+			return File();
         
 		StringArray args = generateArguments(cmdlinetemplate, inputfile, outputfile);
 		
         ChildProcess cp;
         cp.start(args);
         cp.waitForProcessToFinish(maxwait);
-        if (outputfile.existsAsFile())
-            return {outputfile,args.joinIntoString(" ")} ;
+		if (outputfile.existsAsFile())
+			return outputfile;
         Logger::writeToLog(cp.readAllProcessOutput());
-        return {File(),String()};
+		return File();
     }
     
     
@@ -1535,10 +1535,10 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
                                                infiletouse,pvocfile1);
 				progress = 1.0 / 3;
 				File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
-                auto r1 = runCMDProcess(cmdTemplateToUse,r0.first,pvocfile2);
+                auto r1 = runCMDProcess(cmdTemplateToUse,r0,pvocfile2);
 				progress = 1.0 / 3 * 2;
-				auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE",r1.first,destination.getFile());
-                processOk = r2.first.existsAsFile();
+				auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE",r1,destination.getFile());
+                processOk = r2.existsAsFile() && r2.getSize()>0;
 				progress = 1.0;
 				return true;
                 
@@ -1548,7 +1548,7 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         {
             auto r0 = runCMDProcess(cmdTemplateToUse,infiletouse,outfiletouse);
 			progress = 1.0;
-			processOk = r0.first.existsAsFile();
+			processOk = r0.existsAsFile() && r0.getSize()>0;
         }
         return true;
 	}
