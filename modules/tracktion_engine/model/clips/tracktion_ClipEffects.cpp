@@ -1454,22 +1454,23 @@ String NormaliseEffect::getSelectableDescription()
 struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::ClipEffectRenderJob
 {
 	CommandLineProcessJob(Engine& e, const AudioFile& dest, const AudioFile& src, double srcLen,
-                          String cmdLine, String& lastUsedCmd)
-		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen), cmdLineTemplate(cmdLine),
-    lastUsedCommandline(lastUsedCmd)
-	{
+                          String cmdLine)
+		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen), cmdLineTemplate(cmdLine)
+    {
 
 	}
 	bool setUpRender() override
 	{
-        processOk = false;
+		progress = 0.0;
+		processOk = false;
         return true;
 	}
 	bool completeRender() override
 	{
+		progress = 1.0;
 		return processOk;
 	}
-    String getCDPPath()
+    static String getCDPPath()
     {
 #ifdef JUCE_WINDOWS
         return "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\";
@@ -1477,7 +1478,19 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         return "/Users/teemu/CDP_bin/";
 #endif
     }
-    
+	static StringArray generateArguments(String cmdtemplate, File inputfile, File outputfile)
+	{
+		auto args = StringArray::fromTokens(cmdtemplate, false);
+		for (auto& e : args)
+		{
+			if (e == "$INFILE")
+				e = inputfile.getFullPathName();
+			if (e == "$OUTFILE")
+				e = outputfile.getFullPathName();
+		}
+		args.getReference(0) = getCDPPath() + args[0];
+		return args;
+	}
     std::pair<File,String> runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
     {
         if (outputfile.existsAsFile())
@@ -1485,15 +1498,8 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         if (inputfile.existsAsFile()==false)
             return {File(),String()};
         
-        StringArray args = StringArray::fromTokens(cmdlinetemplate, false);
-        for (auto& e : args)
-        {
-            if (e=="$INFILE")
-                e = inputfile.getFullPathName();
-            if (e=="$OUTFILE")
-                e = outputfile.getFullPathName();
-        }
-        args.getReference(0) = getCDPPath()+args[0];
+		StringArray args = generateArguments(cmdlinetemplate, inputfile, outputfile);
+		
         ChildProcess cp;
         cp.start(args);
         cp.waitForProcessToFinish(maxwait);
@@ -1527,20 +1533,22 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
                 File pvocfile1 = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
                 auto r0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d",fftsize,fftoverlaps),
                                                infiletouse,pvocfile1);
-                File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
+				progress = 1.0 / 3;
+				File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
                 auto r1 = runCMDProcess(cmdTemplateToUse,r0.first,pvocfile2);
-                lastUsedCommandline = r1.second;
-                auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE",r1.first,destination.getFile());
+				progress = 1.0 / 3 * 2;
+				auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE",r1.first,destination.getFile());
                 processOk = r2.first.existsAsFile();
-                return true;
+				progress = 1.0;
+				return true;
                 
             }
         }
         else
         {
             auto r0 = runCMDProcess(cmdTemplateToUse,infiletouse,outfiletouse);
-            lastUsedCommandline = r0.second;
-            processOk = r0.first.existsAsFile();
+			progress = 1.0;
+			processOk = r0.first.existsAsFile();
         }
         return true;
 	}
@@ -1548,7 +1556,7 @@ private:
 	bool processOk = false;
 	double sourceLen = 0.0;
 	String cmdLineTemplate;
-    String& lastUsedCommandline;
+    
 };
 
 CommandLineProcessEffect::CommandLineProcessEffect(const juce::ValueTree & vt, ClipEffects &ce)
@@ -1566,9 +1574,11 @@ CommandLineProcessEffect::~CommandLineProcessEffect()
 juce::ReferenceCountedObjectPtr<ClipEffect::ClipEffectRenderJob> CommandLineProcessEffect::createRenderJob(const AudioFile & sourceFile, double sourceLength)
 {
 	CRASH_TRACER
-
+	
+	String cmdtemplate = state.getProperty("cmdline");
+	
 	return new CommandLineProcessJob(edit.engine, getDestinationFile(),
-			sourceFile, sourceLength, state.getProperty("cmdline"), lastUsedCmdLine);
+			sourceFile, sourceLength, cmdtemplate);
 }
 
 bool CommandLineProcessEffect::hasProperties()
@@ -1588,8 +1598,10 @@ juce::String CommandLineProcessEffect::getSelectableDescription()
 
 juce::int64 CommandLineProcessEffect::getIndividualHash() const
 {
-    Logger::writeToLog(lastUsedCmdLine);
-    return lastUsedCmdLine.hashCode64();
+	String cmdtemplate = state.getProperty("cmdline");
+	StringArray args = CommandLineProcessJob::generateArguments(cmdtemplate, getSourceFile().getFile(), File());
+	String argstring = args.joinIntoString(" ");
+	return argstring.hashCode64();
 }
     
 //==============================================================================

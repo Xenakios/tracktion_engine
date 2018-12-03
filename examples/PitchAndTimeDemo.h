@@ -76,7 +76,8 @@ public:
 
 //==============================================================================
 class PitchAndTimeComponent   : public Component,
-                                private ChangeListener
+                                private ChangeListener,
+	public te::SelectableListener
 {
 public:
 	PitchAndTimeComponent() :
@@ -265,7 +266,8 @@ private:
 	ComboBox timePitchModeCombo;
 	TextButton pluginsButton{ "Plugin manager..." };
 	TextButton addPluginButton{ "Add plugin..." };
-	//==============================================================================
+	
+
     te::WaveAudioClip::Ptr getClip()
     {
         if (auto track = edit.getOrInsertAudioTrackAt (0))
@@ -284,7 +286,19 @@ private:
 
         return {};
     }
-
+	void selectableObjectChanged(tracktion_engine::Selectable *se) override
+	{
+		static int callcount = 0;
+		Logger::writeToLog("selectable changed " + String(callcount));
+		++callcount;
+		auto clip = getClip();
+		if (se == clip.get())
+		{
+			thumbnail.setFile(clip->getPlaybackFile());
+		}
+	}
+	void selectableObjectAboutToBeDeleted(tracktion_engine::Selectable *) override
+	{}
     void setFile (const File& f)
     {
         keySlider.setValue (0.0, dontSendNotification);
@@ -293,7 +307,7 @@ private:
         if (auto clip = EngineHelpers::loadAudioFileAsClip (edit, f))
         {
             // Disable auto tempo and pitch, we'll handle these manually
-			
+			clip->addSelectableListener(this);
 			clip->setAutoTempo (false);
             clip->setAutoPitch (false);
             clip->setTimeStretchMode (te::TimeStretcher::defaultMode);
@@ -306,7 +320,7 @@ private:
 				te::ClipEffect::createEffectAndAddToValueTree(edit,
                   clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
 				//String cmdlinetemplate = "modify radical 2 $INFILE $OUTFILE 4 0.33";
-                String cmdlinetemplate = "spec/4096/3 : blur blur $INFILE $OUTFILE 200.0";
+                String cmdlinetemplate = "spec/4096/3 : blur blur $INFILE $OUTFILE 100.0";
                 clip->state.getChildWithName(te::IDs::EFFECTS).getChild(0).setProperty("cmdline", cmdlinetemplate, nullptr);
 				cmdlinetemplate = "modify brassage 5 $INFILE $OUTFILE 0.8";
 				//te::ClipEffect::createEffectAndAddToValueTree(edit,
@@ -316,10 +330,7 @@ private:
 			else
 				Logger::writeToLog("Can't have clip effect");
 			
-			Timer::callAfterDelay(500, [this,clip]()
-			{
-				thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
-			});
+			thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
 
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const auto loopInfo = audioFileInfo.loopInfo;

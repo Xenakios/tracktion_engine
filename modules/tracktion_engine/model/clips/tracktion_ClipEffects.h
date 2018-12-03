@@ -552,7 +552,7 @@ struct CommandLineProcessEffect : public ClipEffect, public Selectable
     juce::int64 getIndividualHash() const override;
 private:
 	struct CommandLineProcessJob;
-    juce::String lastUsedCmdLine;
+	juce::String cmdArguments;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CommandLineProcessEffect)
 };
 
