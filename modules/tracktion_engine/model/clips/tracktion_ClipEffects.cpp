@@ -1514,7 +1514,61 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         Logger::writeToLog(cp.readAllProcessOutput());
 		return File();
     }
-    
+	std::vector<File> splitFileChannels(File infile)
+	{
+		AudioFormatManager man;
+		man.registerBasicFormats();
+		std::unique_ptr<AudioFormatReader> reader(man.createReaderFor(infile));
+		if (reader != nullptr)
+		{
+			WavAudioFormat wavformat;
+			int nchs = reader->numChannels;
+			std::vector<File> resultfiles(nchs);
+			if (nchs == 1)
+			{
+				resultfiles.push_back(infile);
+				return resultfiles;
+			}
+			std::vector<std::pair<FileOutputStream*, AudioFormatWriter*>> writers(nchs);
+			int fails = 0;
+			for (int i = 0; i < nchs; ++i)
+			{
+				resultfiles[i] = engine.getTemporaryFileManager().
+					getTempFile(infile.getFileNameWithoutExtension() + "-chan" + String(i)+".wav");
+				writers[i].first = resultfiles[i].createOutputStream();
+				writers[i].second = wavformat.createWriterFor(writers[i].first,
+					reader->sampleRate, 1, 32, {}, 0);
+				if (writers[i].second == nullptr)
+				{
+					delete writers[i].first;
+					++fails;
+				}
+			}
+			if (fails > 0)
+				return {};
+			int blocksize = 65536;
+			AudioBuffer<float> readbuf(reader->numChannels, blocksize);
+			AudioBuffer<float> writebuf(1, blocksize);
+			int64 pos = 0;
+			while (pos < reader->lengthInSamples)
+			{
+				int numtoread = std::min<int>(blocksize, reader->lengthInSamples - pos);
+				reader->read(&readbuf, 0, numtoread, pos, true, true);
+				for (int i = 0; i < nchs; ++i)
+				{
+					writebuf.copyFrom(0, 0, readbuf, i, 0, numtoread);
+					writers[i].second->writeFromAudioSampleBuffer(writebuf, 0, numtoread);
+				}
+				pos += blocksize;
+			}
+			for (int i = 0; i < nchs; ++i)
+			{
+				delete writers[i].second;
+			}
+			return resultfiles;
+		}
+		return {};
+	}
     
 	bool renderNextBlock() override
 	{
@@ -1528,8 +1582,6 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         if (cmdTemplateToUse.startsWith("spec"))
         {
 			int srcnumchans = source.getNumChannels();
-			if (srcnumchans > 1)
-				return true;
 			String specparstr = cmdTemplateToUse.upToFirstOccurrenceOf(" :", false, true);
             StringArray pars = StringArray::fromTokens(specparstr, "/", "");
             if (pars.size()>=3)
@@ -1538,11 +1590,14 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
                 int fftoverlaps = pars[2].getIntValue();
                 cmdTemplateToUse = cmdTemplateToUse.fromFirstOccurrenceOf(" : ", false, true);
 				std::vector<File> resultfiles;
-				for (int i = 0; i < srcnumchans; ++i)
+				auto splitinputfiles = splitFileChannels(infiletouse);
+				if (splitinputfiles.size() == 0)
+					return true;
+				for (int i = 0; i < splitinputfiles.size(); ++i)
 				{
 					File pvocfile1 = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
 					auto r0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d", fftsize, fftoverlaps),
-						{ infiletouse }, pvocfile1);
+						{ splitinputfiles[i] }, pvocfile1);
 					progress = 1.0 / 3;
 					File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
 					auto r1 = runCMDProcess(cmdTemplateToUse, { r0 }, pvocfile2);
@@ -1560,7 +1615,6 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 				}
 				else
 				{
-					// interlx [-tN] outfile infile1 infile2 [infile3 ... infile16]
 					String infilestxt;
 					for (int i = 0; i < resultfiles.size(); ++i)
 						infilestxt += "$INFILE" + String(i) + " ";
