@@ -1460,64 +1460,48 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 	}
 	bool setUpRender() override
 	{
-		return true;
+        processOk = false;
+        return true;
 	}
 	bool completeRender() override
 	{
 		return processOk;
 	}
-    File doPvocAnalysis(int fftsize, int olaps)
+    String getCDPPath()
     {
-        jassert(fftsize>0 && fftsize<8193);
-        jassert(olaps>0 && olaps<5);
-        ChildProcess cp;
-        File pvoc_out = engine.getTemporaryFileManager().getTempFile("cdp-temp0.ana");
-        if (pvoc_out.existsAsFile())
-            pvoc_out.deleteFile();
 #ifdef JUCE_WINDOWS
-        String cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdLineTemplate;
+        return "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\";
 #else
-        /*
-        String cmdline = String::formatted("/Users/teemu/CDP_bin/pvoc anal 1 \"%s\" \"%s\" -c%d -o%d",
-                                           source.getFile().getFullPathName().toRawUTF8(),
-                                           pvoc_out.getFullPathName().toRawUTF8(),
-                                           fftsize,olaps);
-        */
-        String cmdline = String::formatted("/Users/teemu/CDP_bin/pvoc anal 1 %s %s -c%d -o%d",
-                                           source.getFile().getFullPathName().toRawUTF8(),
-                                           pvoc_out.getFullPathName().toRawUTF8(),
-                                           fftsize,olaps);
+        return "/Users/teemu/CDP_bin/";
 #endif
-        Logger::writeToLog(cmdline);
-        cp.start(cmdline);
-        cp.waitForProcessToFinish(30000);
-        if (pvoc_out.existsAsFile())
-            return pvoc_out;
+    }
+    
+    File runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
+    {
+        if (outputfile.existsAsFile())
+            outputfile.deleteFile();
+        if (inputfile.existsAsFile()==false)
+            return File();
+        
+        StringArray args = StringArray::fromTokens(cmdlinetemplate, false);
+        for (auto& e : args)
+        {
+            if (e=="$INFILE")
+                e = inputfile.getFullPathName();
+            if (e=="$OUTFILE")
+                e = outputfile.getFullPathName();
+        }
+        args.getReference(0) = getCDPPath()+args[0];
+        ChildProcess cp;
+        cp.start(args);
+        cp.waitForProcessToFinish(maxwait);
+        if (outputfile.existsAsFile())
+            return outputfile;
         Logger::writeToLog(cp.readAllProcessOutput());
         return File();
     }
-    bool doPvocResynth(File src)
-    {
-        ChildProcess cp;
-        
-        if (destination.getFile().existsAsFile())
-            destination.deleteFile();
-#ifdef JUCE_WINDOWS
-        String cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdLineTemplate;
-#else
-        String cmdline = String::formatted("/Users/teemu/CDP_bin/pvoc synth %s %s",
-                                           src.getFullPathName().toRawUTF8(),
-                                           destination.getFile().getFullPathName().toRawUTF8());
-        
-#endif
-        Logger::writeToLog(cmdline);
-        cp.start(cmdline);
-        cp.waitForProcessToFinish(30000);
-        if (destination.getFile().existsAsFile())
-            return true;
-        Logger::writeToLog(cp.readAllProcessOutput());
-        return false;
-    }
+    
+    
 	bool renderNextBlock() override
 	{
 		processOk = false;
@@ -1529,70 +1513,30 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         int fftsize = 0;
         if (cmdTemplateToUse.startsWith("spec"))
         {
+            if (source.getNumChannels()>1)
+                return true;
             String specparstr = cmdTemplateToUse.upToFirstOccurrenceOf(" :", false, true);
             StringArray pars = StringArray::fromTokens(specparstr, "/", "");
             if (pars.size()>=3)
             {
                 fftsize = pars[1].getIntValue();
                 int fftoverlaps = pars[2].getIntValue();
-                File pvocfile = doPvocAnalysis(fftsize, fftoverlaps);
-                if (pvocfile!=File())
-                {
-                    infiletouse = pvocfile;
-                    outfiletouse = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
-                    cmdTemplateToUse = cmdTemplateToUse.fromFirstOccurrenceOf(" : ", false, true);
-                } else
-                {
-                    return true;
-                }
-            } else
-            {
+                cmdTemplateToUse = cmdTemplateToUse.fromFirstOccurrenceOf(" : ", false, true);
+                File pvocfile1 = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
+                File pvocfile0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d",fftsize,fftoverlaps),
+                                               infiletouse,pvocfile1);
+                File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
+                File pvocfile3 = runCMDProcess(cmdTemplateToUse,pvocfile1,pvocfile2);
+                File finaloutfile = runCMDProcess("pvoc synth $INFILE $OUTFILE",pvocfile3,destination.getFile());
+                processOk = finaloutfile.existsAsFile();
                 return true;
+                
             }
         }
-        
-#ifdef JUCE_WINDOWS
-        cmdline = "C:\\PortableApps\\cdpr700-InstallPC\\_cdp\\_cdprogs\\" + cmdTemplateToUse;
-#else
-        cmdline = "/Users/teemu/CDP_bin/" + cmdTemplateToUse;
-#endif
-		cmdline = cmdline.replace("$INFILE", infiletouse.getFullPathName());
-		cmdline = cmdline.replace("$OUTFILE", outfiletouse.getFullPathName());
-		// The CDP programs refuse to overwrite files, so need to delete the possibly existing file first
-		if (destination.getFile().existsAsFile())
-		{
-			if (destination.deleteFile() == false)
-			{
-				Logger::writeToLog("Could not delete dest file for CDP");
-				processOk = false;
-				return true;
-			}
-		}
-		Logger::writeToLog(cmdline);
-		ChildProcess cp;
-		if (cp.start(cmdline) == false)
-		{
-			processOk = false;
-			return true;
-		}
-		cp.waitForProcessToFinish(30000);
-		// Checking for 0 does not necessarily work, the process output should be searched for words like "error", "fail",
-		// "invalid", "could not" etc
-		if (cp.getExitCode() != 0) 
-		{
-			processOk = false;
-			Logger::writeToLog(cp.readAllProcessOutput());
-		} else
-			processOk = true;
-		if (fftsize>0)
+        else
         {
-            if (doPvocResynth(outfiletouse))
-            {
-                processOk = true;
-            } else
-            {
-                processOk = false;
-            }
+            File finaloutfile = runCMDProcess(cmdTemplateToUse,infiletouse,outfiletouse);
+            processOk = finaloutfile.existsAsFile();
         }
         return true;
 	}
