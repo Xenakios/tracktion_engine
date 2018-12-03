@@ -288,13 +288,12 @@ private:
     }
 	void selectableObjectChanged(tracktion_engine::Selectable *se) override
 	{
-		static int callcount = 0;
-		Logger::writeToLog("selectable changed " + String(callcount));
-		++callcount;
 		auto clip = getClip();
 		if (se == clip.get())
 		{
 			thumbnail.setFile(clip->getPlaybackFile());
+			Logger::writeToLog(clip->getPlaybackFile().getFile().getFullPathName()+" num chans " + String(clip->getPlaybackFile().getNumChannels()));
+			Logger::writeToLog(edit.state.toXmlString());
 		}
 	}
 	void selectableObjectAboutToBeDeleted(tracktion_engine::Selectable *) override
@@ -330,7 +329,7 @@ private:
 			else
 				Logger::writeToLog("Can't have clip effect");
 			
-			thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+			
 
             const auto audioFileInfo = te::AudioFile (f).getInfo();
             const auto loopInfo = audioFileInfo.loopInfo;
@@ -345,6 +344,7 @@ private:
 
             if (tempo > 0)
                 tempoSlider.setValue (tempo, dontSendNotification);
+			thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
         }
         else
         {
