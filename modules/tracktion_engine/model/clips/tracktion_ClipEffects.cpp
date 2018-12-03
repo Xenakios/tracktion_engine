@@ -1478,27 +1478,33 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         return "/Users/teemu/CDP_bin/";
 #endif
     }
-	static StringArray generateArguments(String cmdtemplate, File inputfile, File outputfile)
+	static StringArray generateArguments(String cmdtemplate, 
+		std::vector<File> inputfiles, File outputfile)
 	{
 		auto args = StringArray::fromTokens(cmdtemplate, false);
+		int infilecnt = 0;
 		for (auto& e : args)
 		{
-			if (e == "$INFILE")
-				e = inputfile.getFullPathName();
+			if (e.startsWith("$INFILE"))
+			{
+				e = inputfiles[infilecnt].getFullPathName();
+				++infilecnt;
+			}
 			if (e == "$OUTFILE")
 				e = outputfile.getFullPathName();
 		}
 		args.getReference(0) = getCDPPath() + args[0];
 		return args;
 	}
-    File runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
+    File runCMDProcess(String cmdlinetemplate, 
+		std::vector<File> inputfiles, File outputfile, int maxwait = 30000)
     {
         if (outputfile.existsAsFile())
             outputfile.deleteFile();
-		if (inputfile.existsAsFile() == false)
+		if (inputfiles[0].existsAsFile() == false)
 			return File();
         
-		StringArray args = generateArguments(cmdlinetemplate, inputfile, outputfile);
+		StringArray args = generateArguments(cmdlinetemplate, inputfiles, outputfile);
 		
         ChildProcess cp;
         cp.start(args);
@@ -1521,32 +1527,55 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         int fftsize = 0;
         if (cmdTemplateToUse.startsWith("spec"))
         {
-            if (source.getNumChannels()>1)
-                return true;
-            String specparstr = cmdTemplateToUse.upToFirstOccurrenceOf(" :", false, true);
+			int srcnumchans = source.getNumChannels();
+			if (srcnumchans > 1)
+				return true;
+			String specparstr = cmdTemplateToUse.upToFirstOccurrenceOf(" :", false, true);
             StringArray pars = StringArray::fromTokens(specparstr, "/", "");
             if (pars.size()>=3)
             {
                 fftsize = pars[1].getIntValue();
                 int fftoverlaps = pars[2].getIntValue();
                 cmdTemplateToUse = cmdTemplateToUse.fromFirstOccurrenceOf(" : ", false, true);
-                File pvocfile1 = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
-                auto r0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d",fftsize,fftoverlaps),
-                                               infiletouse,pvocfile1);
-				progress = 1.0 / 3;
-				File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
-                auto r1 = runCMDProcess(cmdTemplateToUse,r0,pvocfile2);
-				progress = 1.0 / 3 * 2;
-				auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE",r1,destination.getFile());
-                processOk = r2.existsAsFile() && r2.getSize()>0;
-				progress = 1.0;
+				std::vector<File> resultfiles;
+				for (int i = 0; i < srcnumchans; ++i)
+				{
+					File pvocfile1 = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
+					auto r0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d", fftsize, fftoverlaps),
+						{ infiletouse }, pvocfile1);
+					progress = 1.0 / 3;
+					File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
+					auto r1 = runCMDProcess(cmdTemplateToUse, { r0 }, pvocfile2);
+					progress = 1.0 / 3 * 2;
+					File rfile = destination.getFile();
+					if (srcnumchans > 1)
+						rfile = engine.getTemporaryFileManager().getTempFile("cdp-temp3-"+String(i)+".wav");
+					auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE", { r1 }, rfile);
+					resultfiles.push_back(r2);
+				}
+				if (srcnumchans == 1)
+				{
+					processOk = resultfiles.front().existsAsFile() && resultfiles.front().getSize() > 0;
+					progress = 1.0;
+				}
+				else
+				{
+					// interlx [-tN] outfile infile1 infile2 [infile3 ... infile16]
+					String infilestxt;
+					for (int i = 0; i < resultfiles.size(); ++i)
+						infilestxt += "$INFILE" + String(i) + " ";
+					File rfile = runCMDProcess("interlx $OUTFILE "+infilestxt, resultfiles, destination.getFile());
+					processOk = rfile.existsAsFile() && rfile.getSize() > 0;
+					progress = 1.0;
+				}
+                
 				return true;
                 
             }
         }
         else
         {
-            auto r0 = runCMDProcess(cmdTemplateToUse,infiletouse,outfiletouse);
+			auto r0 = runCMDProcess(cmdTemplateToUse, { infiletouse }, outfiletouse);
 			progress = 1.0;
 			processOk = r0.existsAsFile() && r0.getSize()>0;
         }
@@ -1599,7 +1628,7 @@ juce::String CommandLineProcessEffect::getSelectableDescription()
 juce::int64 CommandLineProcessEffect::getIndividualHash() const
 {
 	String cmdtemplate = state.getProperty("cmdline");
-	StringArray args = CommandLineProcessJob::generateArguments(cmdtemplate, getSourceFile().getFile(), File());
+	StringArray args = CommandLineProcessJob::generateArguments(cmdtemplate, { getSourceFile().getFile() }, File());
 	String argstring = args.joinIntoString(" ");
 	return argstring.hashCode64();
 }
