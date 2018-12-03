@@ -549,8 +549,10 @@ struct CommandLineProcessEffect : public ClipEffect, public Selectable
 	bool hasProperties() override;
 	void propertiesButtonPressed(SelectionManager&) override;
 	juce::String getSelectableDescription() override;
+    juce::int64 getIndividualHash() const override;
 private:
 	struct CommandLineProcessJob;
+    juce::String lastUsedCmdLine;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CommandLineProcessEffect)
 };
 

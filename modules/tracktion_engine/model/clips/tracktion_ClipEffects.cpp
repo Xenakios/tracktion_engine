@@ -1453,8 +1453,10 @@ String NormaliseEffect::getSelectableDescription()
 
 struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::ClipEffectRenderJob
 {
-	CommandLineProcessJob(Engine& e, const AudioFile& dest, const AudioFile& src, double srcLen, String cmdLine)
-		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen), cmdLineTemplate(cmdLine)
+	CommandLineProcessJob(Engine& e, const AudioFile& dest, const AudioFile& src, double srcLen,
+                          String cmdLine, String& lastUsedCmd)
+		: ClipEffectRenderJob(e, dest, src), sourceLen(srcLen), cmdLineTemplate(cmdLine),
+    lastUsedCommandline(lastUsedCmd)
 	{
 
 	}
@@ -1476,12 +1478,12 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 #endif
     }
     
-    File runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
+    std::pair<File,String> runCMDProcess(String cmdlinetemplate, File inputfile, File outputfile, int maxwait = 30000)
     {
         if (outputfile.existsAsFile())
             outputfile.deleteFile();
         if (inputfile.existsAsFile()==false)
-            return File();
+            return {File(),String()};
         
         StringArray args = StringArray::fromTokens(cmdlinetemplate, false);
         for (auto& e : args)
@@ -1496,9 +1498,9 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
         cp.start(args);
         cp.waitForProcessToFinish(maxwait);
         if (outputfile.existsAsFile())
-            return outputfile;
+            return {outputfile,args.joinIntoString(" ")} ;
         Logger::writeToLog(cp.readAllProcessOutput());
-        return File();
+        return {File(),String()};
     }
     
     
@@ -1523,20 +1525,22 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
                 int fftoverlaps = pars[2].getIntValue();
                 cmdTemplateToUse = cmdTemplateToUse.fromFirstOccurrenceOf(" : ", false, true);
                 File pvocfile1 = engine.getTemporaryFileManager().getTempFile("cdp-temp1.ana");
-                File pvocfile0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d",fftsize,fftoverlaps),
+                auto r0 = runCMDProcess(String::formatted("pvoc anal 1 $INFILE $OUTFILE -c%d -o%d",fftsize,fftoverlaps),
                                                infiletouse,pvocfile1);
                 File pvocfile2 = engine.getTemporaryFileManager().getTempFile("cdp-temp2.ana");
-                File pvocfile3 = runCMDProcess(cmdTemplateToUse,pvocfile1,pvocfile2);
-                File finaloutfile = runCMDProcess("pvoc synth $INFILE $OUTFILE",pvocfile3,destination.getFile());
-                processOk = finaloutfile.existsAsFile();
+                auto r1 = runCMDProcess(cmdTemplateToUse,r0.first,pvocfile2);
+                lastUsedCommandline = r1.second;
+                auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE",r1.first,destination.getFile());
+                processOk = r2.first.existsAsFile();
                 return true;
                 
             }
         }
         else
         {
-            File finaloutfile = runCMDProcess(cmdTemplateToUse,infiletouse,outfiletouse);
-            processOk = finaloutfile.existsAsFile();
+            auto r0 = runCMDProcess(cmdTemplateToUse,infiletouse,outfiletouse);
+            lastUsedCommandline = r0.second;
+            processOk = r0.first.existsAsFile();
         }
         return true;
 	}
@@ -1544,6 +1548,7 @@ private:
 	bool processOk = false;
 	double sourceLen = 0.0;
 	String cmdLineTemplate;
+    String& lastUsedCommandline;
 };
 
 CommandLineProcessEffect::CommandLineProcessEffect(const juce::ValueTree & vt, ClipEffects &ce)
@@ -1563,12 +1568,12 @@ juce::ReferenceCountedObjectPtr<ClipEffect::ClipEffectRenderJob> CommandLineProc
 	CRASH_TRACER
 
 	return new CommandLineProcessJob(edit.engine, getDestinationFile(),
-			sourceFile, sourceLength, state.getProperty("cmdline"));
+			sourceFile, sourceLength, state.getProperty("cmdline"), lastUsedCmdLine);
 }
 
 bool CommandLineProcessEffect::hasProperties()
 {
-	return false;
+	return true;
 }
 
 void CommandLineProcessEffect::propertiesButtonPressed(SelectionManager& sm)
@@ -1581,6 +1586,12 @@ juce::String CommandLineProcessEffect::getSelectableDescription()
 	return TRANS("Command Line Process Effect Editor");
 }
 
+juce::int64 CommandLineProcessEffect::getIndividualHash() const
+{
+    Logger::writeToLog(lastUsedCmdLine);
+    return lastUsedCmdLine.hashCode64();
+}
+    
 //==============================================================================
 struct MakeMonoEffect::MakeMonoRenderJob : public BlockBasedRenderJob
 {
