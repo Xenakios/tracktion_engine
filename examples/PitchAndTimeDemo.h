@@ -387,6 +387,7 @@ private:
 			
 			thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
             Logger::writeToLog(edit.state.toXmlString());
+			
         }
     }
 

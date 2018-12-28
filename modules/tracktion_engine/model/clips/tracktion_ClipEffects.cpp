@@ -1499,18 +1499,26 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
     File runCMDProcess(String cmdlinetemplate, 
 		std::vector<File> inputfiles, File outputfile, int maxwait = 30000)
     {
-        if (outputfile.existsAsFile())
-            outputfile.deleteFile();
+		if (outputfile.existsAsFile())
+		{
+			if (outputfile.deleteFile() == false)
+			{
+				Logger::writeToLog("Could not delete file");
+				return File();
+			}
+		}
 		if (inputfiles[0].existsAsFile() == false)
 			return File();
         
 		StringArray args = generateArguments(cmdlinetemplate, inputfiles, outputfile);
 		
         ChildProcess cp;
-        cp.start(args);
-        cp.waitForProcessToFinish(maxwait);
-		if (outputfile.existsAsFile())
-			return outputfile;
+		if (cp.start(args) == false)
+			return File();
+		if (cp.waitForProcessToFinish(maxwait) == false)
+			return File();
+		if (outputfile.existsAsFile() && outputfile.getSize()>0)
+			return File(outputfile);
         Logger::writeToLog(cp.readAllProcessOutput());
 		return File();
     }
@@ -1521,7 +1529,6 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 		std::unique_ptr<AudioFormatReader> reader(man.createReaderFor(infile));
 		if (reader != nullptr)
 		{
-			WavAudioFormat wavformat;
 			int nchs = reader->numChannels;
 			std::vector<File> resultfiles(nchs);
 			if (nchs == 1)
@@ -1529,6 +1536,7 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 				resultfiles.push_back(infile);
 				return resultfiles;
 			}
+			WavAudioFormat wavformat;
 			using upwriter = std::unique_ptr<AudioFormatWriter>;
 			std::vector<std::pair<FileOutputStream*, upwriter>> writers(nchs);
 			int fails = 0;
@@ -1601,9 +1609,17 @@ struct CommandLineProcessEffect::CommandLineProcessJob : public ClipEffect::Clip
 					progress = 1.0 / 3 * 2;
 					File rfile = destination.getFile();
 					if (srcnumchans > 1)
-						rfile = engine.getTemporaryFileManager().getTempFile("cdp-temp3-"+String(i)+".wav");
-					auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE", { r1 }, rfile);
-					resultfiles.push_back(r2);
+					{
+						rfile = engine.getTemporaryFileManager().getTempFile("cdp-temp3-" + String(i) + ".wav");
+						auto r2 = runCMDProcess("pvoc synth $INFILE $OUTFILE", { r1 }, rfile);
+						resultfiles.push_back(r2);
+					}
+					if (srcnumchans == 1)
+					{
+						runCMDProcess("pvoc synth $INFILE $OUTFILE", { r1 }, rfile);
+						resultfiles.push_back(rfile);
+					}
+					
 				}
 				if (srcnumchans == 1)
 				{
