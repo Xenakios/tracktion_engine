@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -41,12 +42,12 @@ Project::~Project()
 void Project::lockFile()
 {
     if (fileLockingStream == nullptr)
-        fileLockingStream = file.createInputStream();
+        fileLockingStream.reset (file.createInputStream());
 }
 
 void Project::unlockFile()
 {
-    fileLockingStream = nullptr;
+    fileLockingStream.reset();
 }
 
 void Project::load()
@@ -164,9 +165,9 @@ BufferedInputStream* Project::getInputStream()
 {
     if (stream == nullptr && file.getSize() > 0)
         if (auto in = file.createInputStream())
-            stream = new BufferedInputStream (in, 16384, true);
+            stream.reset (new BufferedInputStream (in, 16384, true));
 
-    return stream;
+    return stream.get();
 }
 
 void Project::handleAsyncUpdate()

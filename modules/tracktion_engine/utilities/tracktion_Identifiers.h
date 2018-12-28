@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -233,7 +234,6 @@ namespace IDs
     DECLARE_ID (midGain2)
     DECLARE_ID (midQ2)
     DECLARE_ID (phaseInvert)
-    DECLARE_ID (CLIP)       // TODO: remove
     DECLARE_ID (AUDIOCLIP)
     DECLARE_ID (MIDICLIP)
     DECLARE_ID (MARKERCLIP)

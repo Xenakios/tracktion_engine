@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -152,6 +153,8 @@ void ExportJob::copyProjectFilesToTempDir()
 //==============================================================================
 void ExportJob::copyEditFilesToTempDir()
 {
+    jassert (edit != nullptr);
+
     if (! includeClips)
     {
         for (auto t : getClipTracks (*edit))
@@ -250,17 +253,16 @@ void ExportJob::copyEditFilesToTempDir()
             }
             else
             {
-                // couldn't create the new clip, so avoid pointing at the old one
-                callBlocking ([&]() { exportable->reassignReferencedItem (ref, {}, start); });
+                // Couldn't create the new clip, so avoid pointing at the old one
+                // Create a new random ID here as it could be used to reference a comp or similar
+                callBlocking ([&]() { exportable->reassignReferencedItem (ref, ProjectItemID::createNewID (newProject->getProjectID()), start); });
             }
         }
     }
 
     // put the new edit at the top of the list
     newProject->moveProjectItem (newProject->getIndexOf (edit->getProjectItemID()), 0);
-
-    if (edit != nullptr)
-        callBlocking ([this] { EditFileOperations (*edit).save (true, true, false); });
+    callBlocking ([this] { EditFileOperations (*edit).save (true, true, false); });
 }
 
 //==============================================================================

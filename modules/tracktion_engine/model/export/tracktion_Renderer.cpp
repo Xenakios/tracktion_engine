@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -59,6 +60,25 @@ static bool trackLoopsBackInto (const Array<Track*>& allTracks, AudioTrack& t, c
                     return true;
 
     return false;
+}
+
+static Array<Track*> getTracksIncludedInRender (const Array<Track*>& allTracks, const BigInteger* tracksToCheck)
+{
+    if (tracksToCheck == nullptr)
+        return allTracks;
+
+    Array<Track*> tracks;
+
+    for (int i = 0; i < allTracks.size(); ++i)
+        if ((*tracksToCheck)[i])
+            tracks.add (allTracks[i]);
+
+    return tracks;
+}
+
+static bool isTrackIncludedInRender (const Array<Track*>& allTracks, const BigInteger* tracksToCheck, Track& trackToLookFor)
+{
+    return getTracksIncludedInRender (allTracks, tracksToCheck).contains (&trackToLookFor);
 }
 
 static Plugin::Array findAllPlugins (AudioNode& node)
@@ -130,6 +150,7 @@ struct Renderer::RenderTask::RendererContext
         TRACKTION_ASSERT_MESSAGE_THREAD
         jassert (r.engine != nullptr);
         jassert (r.edit != nullptr);
+        jassert (r.time.getLength() > 0.0);
 
         if (r.edit->getTransport().isPlayContextActive())
         {
@@ -446,11 +467,12 @@ struct Renderer::RenderTask::RendererContext
                 && renderingBuffer.getMagnitude (0, r.blockSizeForAudio) <= thresholdForStopping))
             return true;
 
-        auto prog = (float) ((streamTime - r.time.getStart()) / r.time.getLength());
+        auto prog = (float) ((streamTime - r.time.getStart()) / jmax (1.0, r.time.getLength()));
 
         if (needsToNormaliseAndTrim)
             prog *= 0.9f;
 
+        jassert (! std::isnan (prog));
         progressToUpdate = jlimit (0.0f, 1.0f, prog);
         --precount;
 
@@ -542,7 +564,7 @@ bool Renderer::RenderTask::renderAudio (Renderer::Parameters& r)
 
     if (context == nullptr)
     {
-        callBlocking ([&, this] { context = new RendererContext (*this, r, node, sourceToUpdate); });
+        callBlocking ([&, this] { context.reset (new RendererContext (*this, r, node.get(), sourceToUpdate)); });
 
         if (! context->getStatus().wasOk())
         {
@@ -774,7 +796,11 @@ static AudioNode* createRenderingNodeFromEdit (Edit& edit,
         {
             auto track = allTracks.getUnchecked (i);
 
-            if (! track->isProcessing (true) || track->isPartOfSubmix())
+            if (! track->isProcessing (true))
+                continue;
+
+            // Don't include tracks that will be part of a submix being rendered
+            if (track->isPartOfSubmix() && isTrackIncludedInRender (allTracks, params.allowedTracks, *track->getParentTrack()))
                 continue;
 
             if (auto at = dynamic_cast<AudioTrack*> (track))

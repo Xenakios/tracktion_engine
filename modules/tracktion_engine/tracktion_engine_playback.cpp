@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 #if ! JUCE_PROJUCER_LIVE_BUILD
 
@@ -74,6 +75,7 @@ using namespace juce;
 #include "playback/devices/tracktion_VirtualMidiInputDevice.cpp"
 #include "playback/devices/tracktion_MidiOutputDevice.cpp"
 #include "playback/devices/tracktion_OutputDevice.cpp"
+#include "playback/devices/tracktion_WaveDeviceDescription.cpp"
 #include "playback/devices/tracktion_WaveInputDevice.cpp"
 #include "playback/devices/tracktion_WaveOutputDevice.cpp"
 

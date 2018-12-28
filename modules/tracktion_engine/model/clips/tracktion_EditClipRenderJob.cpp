@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -297,7 +298,7 @@ bool EditRenderJob::RenderPass::initialise()
 
         if (node != nullptr)
         {
-            task = new Renderer::RenderTask (desc, r, node, owner.progress, &owner.thumbnailToUpdate);
+            task.reset (new Renderer::RenderTask (desc, r, node, owner.progress, &owner.thumbnailToUpdate));
             return task->errorMessage.isEmpty();
         }
     }

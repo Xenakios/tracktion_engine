@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 #if JUCE_WINDOWS && TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
  #pragma comment (lib, "libelastiqueProV3.lib")
@@ -29,7 +30,7 @@ TimeStretcher::StretcherAdditionalOptions::StretcherAdditionalOptions(const Stri
 
     if (string.startsWith ("1/"))
     {
-        StringArray tokens;
+        juce::StringArray tokens;
         tokens.addTokens (string, "/", {});
 
         if (tokens.size() == 5)
@@ -132,7 +133,7 @@ struct ElastiqueStretcher  : public TimeStretcher::Stretcher
 
     bool setSpeedAndPitch (float speedRatio, float semitonesUp) override
     {
-        float pitch = jlimit (0.25f, 4.0f, Pitch::semitonesToRatio (semitonesUp));
+        float pitch = juce::jlimit (0.25f, 4.0f, Pitch::semitonesToRatio (semitonesUp));
         bool sync  = (elastiqueMode == TimeStretcher::elastiquePro) ? elastiqueProOptions.syncTimeStrPitchShft : false;
         int r = elastique->SetStretchPitchQFactor (speedRatio, pitch, sync);
         jassert (r == 0); juce::ignoreUnused (r);
@@ -386,9 +387,9 @@ TimeStretcher::Mode TimeStretcher::checkModeIsAvailable (Mode m)
     }
 }
 
-StringArray TimeStretcher::getPossibleModes (Engine& e, bool excludeMelodyne)
+juce::StringArray TimeStretcher::getPossibleModes (Engine& e, bool excludeMelodyne)
 {
-    StringArray s;
+    juce::StringArray s;
 
    #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
     s.add (getElastiquePro());
@@ -414,7 +415,7 @@ StringArray TimeStretcher::getPossibleModes (Engine& e, bool excludeMelodyne)
     return s;
 }
 
-TimeStretcher::Mode TimeStretcher::getModeFromName (Engine& e, const String& name)
+TimeStretcher::Mode TimeStretcher::getModeFromName (Engine& e, const juce::String& name)
 {
    #if TRACKTION_ENABLE_TIMESTRETCH_ELASTIQUE
     if (name == getElastiquePro())          return elastiquePro;
@@ -438,7 +439,7 @@ TimeStretcher::Mode TimeStretcher::getModeFromName (Engine& e, const String& nam
                                                        : disabled;
 }
 
-String TimeStretcher::getNameOfMode (const Mode mode)
+juce::String TimeStretcher::getNameOfMode (const Mode mode)
 {
     switch (mode)
     {
@@ -490,8 +491,8 @@ void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
         case elastiqueEfficient:
         case elastiqueMobile:
         case elastiqueMonophonic:
-            stretcher = new ElastiqueStretcher (sourceSampleRate, samplesPerBlock, numChannels,
-                                                mode, options, realtime ? 0.25f : 0.1f);
+            stretcher.reset (new ElastiqueStretcher (sourceSampleRate, samplesPerBlock, numChannels,
+                                                     mode, options, realtime ? 0.25f : 0.1f));
             break;
        #endif
 
@@ -499,13 +500,13 @@ void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
         case soundtouchNormal:
         case soundtouchBetter:
             juce::ignoreUnused (options, realtime);
-            stretcher = new SoundTouchStretcher (sourceSampleRate, samplesPerBlock, numChannels,
-                                                 mode == soundtouchBetter);
+            stretcher.reset (new SoundTouchStretcher (sourceSampleRate, samplesPerBlock, numChannels,
+                                                      mode == soundtouchBetter));
             break;
        #endif
 #if TRACKTION_ENABLE_TIMESTRETCH_RUBBERBAND
 		case rubberband:
-			stretcher = createRubber(sourceSampleRate,samplesPerBlock, numChannels);
+			stretcher.reset(createRubber(sourceSampleRate,samplesPerBlock, numChannels));
 			break;
 #endif
         default:
@@ -515,7 +516,7 @@ void TimeStretcher::initialise (double sourceSampleRate, int samplesPerBlock,
 
     if (stretcher != nullptr)
         if (! stretcher->isOk())
-            stretcher = nullptr;
+            stretcher.reset();
 }
 
 bool TimeStretcher::canProcessFor (const Mode mode)
@@ -568,8 +569,8 @@ void TimeStretcher::processData (AudioFifo& inFifo, int numSamples, AudioFifo& o
 
     if (stretcher != nullptr)
     {
-        const float* const* inChannels = inBuffer.buffer.getArrayOfReadPointers();
-        float* const* outChannels = outBuffer.buffer.getArrayOfWritePointers();
+        auto inChannels = inBuffer.buffer.getArrayOfReadPointers();
+        auto outChannels = outBuffer.buffer.getArrayOfWritePointers();
 
         stretcher->processData (inChannels, numSamples, outChannels);
     }

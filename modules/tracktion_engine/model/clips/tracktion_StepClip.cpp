@@ -4,15 +4,16 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
 
 struct StepClip::ChannelList  : public ValueTreeObjectList<StepClip::Channel>
 {
-    ChannelList (StepClip& c, const ValueTree& v)
+    ChannelList (StepClip& c, const juce::ValueTree& v)
         : ValueTreeObjectList<Channel> (v), clip (c)
     {
         rebuildObjects();
@@ -23,12 +24,12 @@ struct StepClip::ChannelList  : public ValueTreeObjectList<StepClip::Channel>
         freeObjects();
     }
 
-    bool isSuitableType (const ValueTree& v) const override
+    bool isSuitableType (const juce::ValueTree& v) const override
     {
         return v.hasType (IDs::CHANNEL);
     }
 
-    Channel* createNewObject (const ValueTree& v) override
+    Channel* createNewObject (const juce::ValueTree& v) override
     {
         return new Channel (clip, v);
     }
@@ -48,11 +49,11 @@ struct StepClip::ChannelList  : public ValueTreeObjectList<StepClip::Channel>
 };
 
 //==============================================================================
-StepClip::StepClip (const ValueTree& v, EditItemID id, ClipTrack& targetTrack)
+StepClip::StepClip (const juce::ValueTree& v, EditItemID id, ClipTrack& targetTrack)
     : Clip (v, targetTrack, id, Type::step)
 {
     auto um = getUndoManager();
-    channelList = new ChannelList (*this, state.getOrCreateChildWithName (IDs::CHANNELS, um));
+    channelList.reset (new ChannelList (*this, state.getOrCreateChildWithName (IDs::CHANNELS, um)));
     repeatSequence.referTo (state, IDs::repeatSequence, um);
     volumeDb.referTo (state, IDs::volDb, um, 0.0f);
     mute.referTo (state, IDs::mute, um, false);
@@ -149,7 +150,7 @@ void StepClip::updatePatternList()
     sendChangeMessage();
 }
 
-void StepClip::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
+void StepClip::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& i)
 {
     Clip::valueTreePropertyChanged (v, i);
 
@@ -159,7 +160,7 @@ void StepClip::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
     changed();
 }
 
-void StepClip::valueTreeChildAdded (ValueTree& p, ValueTree& c)
+void StepClip::valueTreeChildAdded (ValueTree& p, juce::ValueTree& c)
 {
     Clip::valueTreeChildAdded (p, c);
 
@@ -167,7 +168,7 @@ void StepClip::valueTreeChildAdded (ValueTree& p, ValueTree& c)
         changed();
 }
 
-void StepClip::valueTreeChildRemoved (ValueTree& p, ValueTree& c, int oldIndex)
+void StepClip::valueTreeChildRemoved (ValueTree& p, juce::ValueTree& c, int oldIndex)
 {
     Clip::valueTreeChildRemoved (p, c, oldIndex);
 

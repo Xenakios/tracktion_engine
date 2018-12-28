@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -155,9 +156,9 @@ void MarkerManager::valueTreeChanged (const ValueTree& v)
         sendChangeMessage();
 }
 
-void MarkerManager::valueTreePropertyChanged (ValueTree& v, const Identifier&)  { valueTreeChanged (v); }
-void MarkerManager::valueTreeChildAdded (ValueTree& p, ValueTree&)              { valueTreeChanged (p); }
-void MarkerManager::valueTreeChildRemoved (ValueTree& p, ValueTree&, int)       { valueTreeChanged (p); }
-void MarkerManager::valueTreeParentChanged (ValueTree& v)                       { valueTreeChanged (v); }
+void MarkerManager::valueTreePropertyChanged (ValueTree& v, const juce::Identifier&)  { valueTreeChanged (v); }
+void MarkerManager::valueTreeChildAdded (ValueTree& p, ValueTree&)                    { valueTreeChanged (p); }
+void MarkerManager::valueTreeChildRemoved (ValueTree& p, ValueTree&, int)             { valueTreeChanged (p); }
+void MarkerManager::valueTreeParentChanged (ValueTree& v)                             { valueTreeChanged (v); }
 
 }

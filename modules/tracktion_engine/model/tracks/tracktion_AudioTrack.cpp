@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -739,7 +740,7 @@ void AudioTrack::removeListener (Listener* l)
 }
 
 //==============================================================================
-void AudioTrack::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
+void AudioTrack::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& i)
 {
     if (v == state)
     {
@@ -1265,6 +1266,7 @@ void AudioTrack::freezeTrack()
     r.usePlugins = true;
     r.useMasterPlugins = false;
     r.addAntiDenormalisationNoise = EditPlaybackContext::shouldAddAntiDenormalisationNoise (edit.engine);
+    r.category = ProjectItem::Category::frozen;
 
     const Edit::ScopedRenderStatus srs (edit, true);
     auto renderedItem = Renderer::renderToProjectItem (TRANS("Creating track freeze for \"XDVX\"")
@@ -1327,7 +1329,7 @@ bool AudioTrack::insertFreezePointIfRequired()
         return false;
 
     if (auto p = pluginList.insertPlugin (FreezePointPlugin::create(), getIndexOfDefaultFreezePoint()))
-        const ScopedPointer<FreezePointPlugin::ScopedTrackFreezer> freezer (FreezePointPlugin::createTrackFreezer (p));
+        auto freezer = FreezePointPlugin::createTrackFreezer (p);
 
     edit.dispatchPendingUpdatesSynchronously();
     // need to force the audio device to update before we start the render
@@ -1393,9 +1395,7 @@ void AudioTrack::unFreezeTrack()
 
 File AudioTrack::getFreezeFile() const noexcept
 {
-    // TODO: unify proxy filename handling
-    return edit.getTempDirectory (true)
-             .getChildFile (getTrackFreezePrefix() + "0_" + itemID.toString() + ".freeze");
+    return TemporaryFileManager::getFreezeFileForTrack (*this);
 }
 
 AudioNode* AudioTrack::createFreezeAudioNode (bool addAntiDenormalisationNoise)

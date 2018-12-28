@@ -5,8 +5,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -187,6 +188,15 @@ struct SelectableList
         items.addArray (arrayToAddFrom, startIndex, numElementsToAdd);
     }
 
+    template <class OtherArrayType>
+    inline void mergeArray (const OtherArrayType& arrayToMergeFrom)
+    {
+        classes.clearQuick();
+
+        for (auto& s : arrayToMergeFrom)
+            addIfNotAlreadyThere (s);
+    }
+
     inline void add (Selectable* newElement)                    { items.add (newElement); }
     inline bool addIfNotAlreadyThere (Selectable* newElement)   { return items.addIfNotAlreadyThere (newElement); }
 
@@ -196,6 +206,16 @@ struct SelectableList
     inline Selectable* removeAndReturn (int indexToRemove)      { classes.clearQuick(); return items.removeAndReturn (indexToRemove); }
     inline bool contains (Selectable* elementToLookFor) const   { return items.contains (elementToLookFor); }
     inline int indexOf (Selectable* elementToLookFor) const     { return items.indexOf (elementToLookFor); }
+
+    juce::Array<Selectable::WeakRef> getAsWeakRefList() const
+    {
+        juce::Array<Selectable::WeakRef> result;
+
+        for (auto& i : items)
+            result.add (i);
+
+        return result;
+    }
 
     template <class OtherArrayType>
     inline bool operator== (const OtherArrayType& other) const  { return items == other; }

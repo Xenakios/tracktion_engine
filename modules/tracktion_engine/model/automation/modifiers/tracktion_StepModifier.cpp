@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -300,7 +301,7 @@ void StepModifier::valueTreeChanged()
         changedTimer.startTimerHz (30);
 }
 
-void StepModifier::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
+void StepModifier::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& i)
 {
     if (v == state && i == IDs::stepData)
         restoreStepsFromProperty();

@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -218,7 +219,7 @@ protected:
     juce::File currentSourceFile;
     juce::CachedValue<SyncType> syncType;
     juce::CachedValue<bool> showingTakes;
-    juce::ScopedPointer<PatternGenerator> patternGenerator;
+    std::unique_ptr<PatternGenerator> patternGenerator;
     AsyncCaller updateLinkedClipsCaller;
 
     void setCurrentSourceFile (const juce::File&);

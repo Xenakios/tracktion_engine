@@ -4,6 +4,8 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
+
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
 */
 
 namespace tracktion_engine
@@ -63,7 +65,6 @@ void Engine::initialise()
     deviceManager->initialise();
 
     pluginManager->initialise();
-    pluginManager->setUsesSeparateProcessForScanning (false);
 
     ProjectManager::getInstance()->initialise();
 

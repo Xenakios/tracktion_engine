@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -19,7 +20,7 @@ struct ClipTrack::ClipList  : public ValueTreeObjectList<Clip>,
     {
         rebuildObjects();
 
-        editLoadedCallback = new Edit::LoadFinishedCallback<ClipList> (*this, ct.edit);
+        editLoadedCallback.reset (new Edit::LoadFinishedCallback<ClipList> (*this, ct.edit));
         clipTrack.trackItemsDirty = true;
     }
 
@@ -91,9 +92,9 @@ struct ClipTrack::ClipList  : public ValueTreeObjectList<Clip>,
     }
 
     ClipTrack& clipTrack;
-    ScopedPointer<Edit::LoadFinishedCallback<ClipList>> editLoadedCallback;
+    std::unique_ptr<Edit::LoadFinishedCallback<ClipList>> editLoadedCallback;
 
-    void valueTreePropertyChanged (ValueTree& v, const Identifier& id) override
+    void valueTreePropertyChanged (ValueTree& v, const juce::Identifier& id) override
     {
         if (Clip::isClipState (v))
         {
@@ -169,7 +170,7 @@ struct ClipTrack::CollectionClipList  : public ValueTree::Listener
         state.removeListener (this);
     }
 
-    void valueTreePropertyChanged (ValueTree& v, const Identifier& id) override
+    void valueTreePropertyChanged (ValueTree& v, const juce::Identifier& id) override
     {
         if (id == IDs::groupID)
         {
@@ -308,8 +309,8 @@ ClipTrack::ClipTrack (Edit& edit, const ValueTree& v, double defaultHeight, doub
     ClipList::Sorter sorter;
     state.sort (sorter, &edit.getUndoManager(), true);
 
-    collectionClipList = new CollectionClipList (*this, state);
-    clipList = new ClipList (*this, state);
+    collectionClipList.reset (new CollectionClipList (*this, state));
+    clipList.reset (new ClipList (*this, state));
 }
 
 ClipTrack::~ClipTrack()

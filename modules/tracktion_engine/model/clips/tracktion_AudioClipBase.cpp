@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -422,7 +423,7 @@ private:
 };
 
 //==============================================================================
-AudioClipBase::AudioClipBase (const ValueTree& v, EditItemID id, Type t, ClipTrack& targetTrack)
+AudioClipBase::AudioClipBase (const juce::ValueTree& v, EditItemID id, Type t, ClipTrack& targetTrack)
     : Clip (v, targetTrack, id, t),
       loopInfo (state.getOrCreateChildWithName (IDs::LOOPINFO, getUndoManager()), getUndoManager()),
       pluginList (targetTrack.edit)
@@ -1500,7 +1501,7 @@ void AudioClipBase::enableEffects (bool enable, bool warn)
     }
 }
 
-void AudioClipBase::addEffect (const ValueTree& effectsTree)
+void AudioClipBase::addEffect (const juce::ValueTree& effectsTree)
 {
     auto v = state.getChildWithName (IDs::EFFECTS);
     jassert (v.isValid());
@@ -2173,16 +2174,10 @@ AudioClipBase::ProxyRenderingInfo::~ProxyRenderingInfo() {}
 
 AudioFile AudioClipBase::getProxyFileToCreate (bool renderTimestretched)
 {
-    auto tempDir = edit.getTempDirectory (true);
-
-    // TODO: move logic for creating and parsing these filenames into one place - see
-    // also getEditItemIDFromFilename()
-
     if (renderTimestretched)
-        return AudioFile (tempDir.getChildFile (getClipProxyPrefix() + "0_" + itemID.toString()
-                                                 + "_" + String::toHexString (getProxyHash()) + ".wav"));
+        return TemporaryFileManager::getFileForCachedClipRender (*this, getProxyHash());
 
-    return AudioFile (tempDir.getChildFile (getFileProxyPrefix() + String (getHash()) + ".wav"));
+    return TemporaryFileManager::getFileForCachedFileRender (edit, getHash());
 }
 
 //==============================================================================
@@ -2593,7 +2588,7 @@ void AudioClipBase::timerCallback()
     }
 }
 
-void AudioClipBase::valueTreePropertyChanged (ValueTree& tree, const Identifier& id)
+void AudioClipBase::valueTreePropertyChanged (ValueTree& tree, const juce::Identifier& id)
 {
     if (tree == state)
     {
@@ -2662,7 +2657,7 @@ void AudioClipBase::valueTreePropertyChanged (ValueTree& tree, const Identifier&
     }
 }
 
-void AudioClipBase::valueTreeChildAdded (ValueTree& parent, ValueTree& child)
+void AudioClipBase::valueTreeChildAdded (ValueTree& parent, juce::ValueTree& child)
 {
     if (parent == state)
     {
@@ -2681,7 +2676,7 @@ void AudioClipBase::valueTreeChildAdded (ValueTree& parent, ValueTree& child)
     }
 }
 
-void AudioClipBase::valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int oldIndex)
+void AudioClipBase::valueTreeChildRemoved (ValueTree& parent, juce::ValueTree& child, int oldIndex)
 {
     if (parent == state)
     {

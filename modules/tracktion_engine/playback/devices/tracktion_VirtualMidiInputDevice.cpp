@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -60,7 +61,7 @@ VirtualMidiInputDevice::~VirtualMidiInputDevice()
 InputDeviceInstance* VirtualMidiInputDevice::createInstance (EditPlaybackContext& c)
 {
     if (! isTrackDevice() && retrospectiveBuffer == nullptr)
-        retrospectiveBuffer = new RetrospectiveMidiBuffer (c.edit.engine);
+        retrospectiveBuffer.reset (new RetrospectiveMidiBuffer (c.edit.engine));
 
     return new VirtualMidiInputDeviceInstance (*this, c);
 }
@@ -96,7 +97,7 @@ void VirtualMidiInputDevice::loadProps()
 
 void VirtualMidiInputDevice::saveProps()
 {
-    XmlElement n ("SETTINGS");
+    juce::XmlElement n ("SETTINGS");
 
     n.setAttribute ("inputDevices", inputDevices.joinIntoString (";"));
     MidiInputDevice::saveProps (n);

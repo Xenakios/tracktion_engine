@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -81,7 +82,7 @@ private:
         ~ProcessPriorityBooster();
     };
 
-    juce::ScopedPointer<ProcessPriorityBooster> priorityBooster;
+    std::unique_ptr<ProcessPriorityBooster> priorityBooster;
 
     juce::OwnedArray<InputDeviceInstance> waveInputs, midiInputs;
     juce::OwnedArray<WaveOutputDeviceInstance> waveOutputs;

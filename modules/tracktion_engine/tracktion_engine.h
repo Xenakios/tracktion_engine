@@ -4,6 +4,8 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
+
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
 */
 
 /*******************************************************************************
@@ -134,6 +136,13 @@
 */
 #ifndef TRACKTION_CHECK_FOR_SLOW_RENDERING
  #define TRACKTION_CHECK_FOR_SLOW_RENDERING 0
+#endif
+
+/** Config: TRACKTION_AIR_WINDOWS
+    Adds AirWindows effect plugins. Requires complaiance with AirWindows MIT license.
+ */
+#ifndef TRACKTION_AIR_WINDOWS
+ #define TRACKTION_AIR_WINDOWS 0
 #endif
 
 
@@ -300,6 +309,7 @@ namespace tracktion_engine
 
 #include "playback/tracktion_PlayHead.h"
 #include "playback/audionodes/tracktion_AudioNode.h"
+#include "playback/devices/tracktion_WaveDeviceDescription.h"
 
 //==============================================================================
 #include "model/automation/tracktion_AutomationCurve.h"
@@ -489,6 +499,10 @@ namespace tracktion_engine
 #include "playback/audionodes/tracktion_SidechainAudioNode.h"
 #include "playback/audionodes/tracktion_TrackMutingAudioNode.h"
 #include "playback/audionodes/tracktion_SpeedRampAudioNode.h"
+
+#if TRACKTION_AIR_WINDOWS
+#include "plugins/airwindows/tracktion_AirWindows.h"
+#endif
 
 #include "plugins/internal/tracktion_LevelMeter.h"
 #include "plugins/internal/tracktion_FreezePoint.h"

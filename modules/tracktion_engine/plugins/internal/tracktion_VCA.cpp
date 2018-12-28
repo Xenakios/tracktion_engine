@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -121,7 +122,7 @@ bool VCAPlugin::canBeMoved()
     return false;
 }
 
-void VCAPlugin::restorePluginStateFromValueTree (const ValueTree& v)
+void VCAPlugin::restorePluginStateFromValueTree (const juce::ValueTree& v)
 {
     CachedValue<float>* cvsFloat[]  = { &volumeValue, nullptr };
     copyPropertiesToNullTerminatedCachedValues (v, cvsFloat);

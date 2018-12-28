@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -306,7 +307,7 @@ String InsertPlugin::getSelectableDescription()
     return TRANS("Insert Plugin");
 }
 
-void InsertPlugin::restorePluginStateFromValueTree (const ValueTree& v)
+void InsertPlugin::restorePluginStateFromValueTree (const juce::ValueTree& v)
 {
     if (v.hasProperty (IDs::name))
         name = v.getProperty (IDs::name).toString();
@@ -403,7 +404,7 @@ void InsertPlugin::fillReturnBuffer (const AudioRenderContext& rc)
     }
 }
 
-void InsertPlugin::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
+void InsertPlugin::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& i)
 {
     if (v == state)
     {

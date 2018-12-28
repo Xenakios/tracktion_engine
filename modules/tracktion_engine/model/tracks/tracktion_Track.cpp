@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -455,11 +456,11 @@ void Track::updateTrackList()
     if (TrackList::hasAnySubTracks (state))
     {
         if (trackList == nullptr)
-            trackList = new TrackList (edit, state);
+            trackList.reset (new TrackList (edit, state));
     }
     else
     {
-        trackList = nullptr;
+        trackList.reset();
     }
 }
 
@@ -515,7 +516,7 @@ void Track::setTags (const StringArray& s)
     tags = s.joinIntoString ("|").replace (" ", "_");
 }
 
-void Track::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
+void Track::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& i)
 {
     if (v == state)
     {

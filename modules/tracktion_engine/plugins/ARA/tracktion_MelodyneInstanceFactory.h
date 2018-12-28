@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 struct MelodyneInstance
 {
@@ -60,7 +61,7 @@ public:
         TRACKTION_ASSERT_MESSAGE_THREAD
         jassert (plugin != nullptr);
 
-        ScopedPointer<MelodyneInstance> w (new MelodyneInstance());
+        std::unique_ptr<MelodyneInstance> w (new MelodyneInstance());
         w->plugin = &p;
         w->factory = factory;
         w->extensionInstance = nullptr;
@@ -78,7 +79,7 @@ private:
     // of the plugin is kept hanging around until shutdown, forcing the DLL to
     // remain in memory until we're sure all other instances have gone away. Not
     // pretty, but not sure how else we could handle this.
-    ScopedPointer<AudioPluginInstance> plugin;
+    std::unique_ptr<AudioPluginInstance> plugin;
 
     MelodyneInstanceFactory()
     {
@@ -293,25 +294,23 @@ private:
 };
 
 //==============================================================================
-static AudioPluginInstance* createMelodynePlugin (const char* formatToTry,
-                                                  const Array<PluginDescription*>& araDescs)
+static std::unique_ptr<AudioPluginInstance> createMelodynePlugin (const char* formatToTry,
+                                                                  const Array<PluginDescription*>& araDescs)
 {
     CRASH_TRACER
 
     String error;
+    auto& pfm = Engine::getInstance().getPluginManager().pluginFormatManager;
 
     for (auto pd : araDescs)
-    {
         if (pd->pluginFormatName == formatToTry)
-            if (auto p = Engine::getInstance().getPluginManager().pluginFormatManager
-                            .createPluginInstance (*pd, 44100.0, 512, error))
+            if (auto p = std::unique_ptr<AudioPluginInstance> (pfm.createPluginInstance (*pd, 44100.0, 512, error)))
                 return p;
-    }
 
     return {};
 }
 
-static AudioPluginInstance* createMelodynePlugin()
+static std::unique_ptr<AudioPluginInstance> createMelodynePlugin()
 {
     CRASH_TRACER
     TRACKTION_ASSERT_MESSAGE_THREAD

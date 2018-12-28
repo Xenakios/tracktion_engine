@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -70,6 +71,9 @@ double WaveAudioClip::getSourceLength() const
 void WaveAudioClip::sourceMediaChanged()
 {
     AudioClipBase::sourceMediaChanged();
+
+    if (compManager != nullptr && isCurrentTakeComp())
+        setCurrentSourceFile (compManager->getCurrentCompFile());
 
     sourceLength = 0.0;
     markAsDirty();
@@ -232,7 +236,7 @@ void WaveAudioClip::invalidateCurrentTake (const ValueTree& parent) noexcept
         invalidateCurrentTake();
 }
 
-void WaveAudioClip::valueTreePropertyChanged (ValueTree& treeWhosePropertyHasChanged, const Identifier& property)
+void WaveAudioClip::valueTreePropertyChanged (ValueTree& treeWhosePropertyHasChanged, const juce::Identifier& property)
 {
     AudioClipBase::valueTreePropertyChanged (treeWhosePropertyHasChanged, property);
 
@@ -271,6 +275,7 @@ void WaveAudioClip::setCurrentTake (int takeIndex)
 
     auto takeSourceID = ProjectItemID::fromProperty (take, IDs::source);
     auto mo = ProjectManager::getInstance()->getProjectItem (takeSourceID);
+    invalidateCurrentTake();
 
     if (mo != nullptr || getCompManager().isTakeComp (takeIndex))
         sourceFileReference.setToProjectFileReference (takeSourceID);
@@ -560,17 +565,6 @@ bool WaveAudioClip::isUsingFile (const AudioFile& af)
         return true;
 
     return false;
-}
-
-AudioFile WaveAudioClip::getCompFileFor (int64 takeHash) const
-{
-    auto tempDir = edit.getTempDirectory (true);
-
-    // TODO: unify all proxy filename functionality..
-    return AudioFile (tempDir.getChildFile (getCompPrefix()
-                                             + "0_" + itemID.toString()
-                                             + "_" + String::toHexString (takeHash)
-                                             + ".wav"));
 }
 
 }

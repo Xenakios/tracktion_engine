@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -22,7 +23,7 @@ void CustomControlSurface::CustomControlSurfaceManager::unregisterSurface (Custo
 
 void CustomControlSurface::CustomControlSurfaceManager::saveAllSettings()
 {
-    XmlElement root ("MIDICUSTOMCONTROLSURFACES");
+    juce::XmlElement root ("MIDICUSTOMCONTROLSURFACES");
 
     for (auto* s : surfaces)
         root.addChildElement (s->createXml());
@@ -42,7 +43,7 @@ CustomControlSurface::CustomControlSurface (ExternalControllerManager& ecm, cons
     loadFunctions();
 }
 
-CustomControlSurface::CustomControlSurface (ExternalControllerManager& ecm, const XmlElement& xml)
+CustomControlSurface::CustomControlSurface (ExternalControllerManager& ecm, const juce::XmlElement& xml)
    : ControlSurface (ecm)
 {
     init();
@@ -185,7 +186,7 @@ int CustomControlSurface::getControllerNumberFromId (int id) noexcept
 
 XmlElement* CustomControlSurface::createXml()
 {
-    auto element = new XmlElement ("MIDICUSTOMCONTROLSURFACE");
+    auto element = new juce::XmlElement ("MIDICUSTOMCONTROLSURFACE");
     element->setAttribute ("name", deviceDescription);
     element->setAttribute ("eatsMidi", eatsAllMidi);
     element->setAttribute ("channels", numberOfFaderChannels);
@@ -203,7 +204,7 @@ XmlElement* CustomControlSurface::createXml()
     return element;
 }
 
-bool CustomControlSurface::loadFromXml (const XmlElement& xml)
+bool CustomControlSurface::loadFromXml (const juce::XmlElement& xml)
 {
     eatsAllMidi                 = xml.getBoolAttribute("eatsMidi", false);
     numberOfFaderChannels       = xml.getIntAttribute("channels", 8);

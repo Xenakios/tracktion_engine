@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 juce::AudioDeviceManager* gDeviceManager = nullptr; // TODO
 
@@ -104,7 +105,8 @@ struct DeviceManager::WaveDeviceList
         {
             if (isInput ? dm.isDeviceInChannelStereo (i) : dm.isDeviceOutChannelStereo (i))
             {
-                descriptions.push_back (WaveDeviceDescription (mergeTwoNames (channelNames[i], channelNames[i + 1]), i, i + 1, isDeviceEnabled (i) || isDeviceEnabled (i + 1)));
+                descriptions.push_back (WaveDeviceDescription (mergeTwoNames (channelNames[i], channelNames[i + 1]),
+                                                               i, i + 1, isDeviceEnabled (i) || isDeviceEnabled (i + 1)));
                 ++i;
             }
             else
@@ -469,7 +471,7 @@ void DeviceManager::rebuildWaveDeviceList()
 
     sanityCheckEnabledChannels();
 
-    lastWaveDeviceList = new WaveDeviceList (*this);
+    lastWaveDeviceList.reset (new WaveDeviceList (*this));
 
     for (const auto& d : lastWaveDeviceList->inputs)
     {
@@ -590,7 +592,7 @@ void DeviceManager::saveSettings()
     {
         if (deviceManager.getCurrentAudioDevice() != nullptr)
         {
-            XmlElement n ("AUDIODEVICE");
+            juce::XmlElement n ("AUDIODEVICE");
 
             n.setAttribute ("outEnabled", outEnabled.toString (2));
             n.setAttribute ("inEnabled", inEnabled.toString (2));

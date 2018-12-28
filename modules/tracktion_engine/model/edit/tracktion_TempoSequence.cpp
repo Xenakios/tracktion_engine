@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -19,10 +20,10 @@ struct TempoAndTimeSigListBase  : public ValueTreeObjectList<ObjectType>,
     {
     }
 
-    void newObjectAdded (ObjectType*) override                              { sendChange(); }
-    void objectRemoved (ObjectType*) override                               { sendChange(); }
-    void objectOrderChanged() override                                      { sendChange(); }
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  { sendChange(); }
+    void newObjectAdded (ObjectType*) override                                    { sendChange(); }
+    void objectRemoved (ObjectType*) override                                     { sendChange(); }
+    void objectOrderChanged() override                                            { sendChange(); }
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  { sendChange(); }
 
     void sendChange()
     {
@@ -1115,35 +1116,33 @@ void EditTimecodeRemapperSnapshot::remapEdit (Edit& ed)
 
     for (auto& cp : clips)
     {
-        if (Selectable::isSelectableValid (cp.clip))
+        if (auto c = dynamic_cast<Clip*> (cp.clip.get()))
         {
-            auto& c = *cp.clip;
-
             auto newStart  = tempoSequence.beatsToTime (cp.startBeat);
             auto newEnd    = tempoSequence.beatsToTime (cp.endBeat);
             auto newOffset = newStart - tempoSequence.beatsToTime (cp.contentStartBeat);
 
-            auto pos = c.getPosition();
+            auto pos = c->getPosition();
 
             if (std::abs (pos.getStart() - newStart)
                  + std::abs (pos.getEnd() - newEnd)
                  + std::abs (pos.getOffset() - newOffset) > 0.001)
             {
-                if (c.getSyncType() == Clip::syncAbsolute)
+                if (c->getSyncType() == Clip::syncAbsolute)
                     continue;
 
-                if (c.type == TrackItem::Type::wave)
+                if (c->type == TrackItem::Type::wave)
                 {
-                    auto ac = dynamic_cast<AudioClipBase*> (cp.clip);
+                    auto ac = dynamic_cast<AudioClipBase*> (cp.clip.get());
 
                     if (ac != nullptr && ac->getAutoTempo())
-                        c.setPosition ({ { newStart, newEnd }, newOffset });
+                        c->setPosition ({ { newStart, newEnd }, newOffset });
                     else
-                        c.setStart (newStart, false, true);
+                        c->setStart (newStart, false, true);
                 }
                 else
                 {
-                    c.setPosition ({ { newStart, newEnd }, newOffset });
+                    c->setPosition ({ { newStart, newEnd }, newOffset });
                 }
             }
         }

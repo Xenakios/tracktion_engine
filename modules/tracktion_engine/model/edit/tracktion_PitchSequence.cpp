@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -45,7 +46,7 @@ struct PitchSequence::PitchList  : public ValueTreeObjectList<PitchSetting>,
     void newObjectAdded (PitchSetting*) override    { sendChange(); }
     void objectRemoved (PitchSetting*) override     { sendChange(); }
     void objectOrderChanged() override              { sendChange(); }
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  { sendChange(); }
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  { sendChange(); }
 
     void sendChange()
     {

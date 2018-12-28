@@ -4,13 +4,14 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
 
-MarkerClip::MarkerClip (const ValueTree& v, EditItemID id, ClipTrack& targetTrack)
+MarkerClip::MarkerClip (const juce::ValueTree& v, EditItemID id, ClipTrack& targetTrack)
    : Clip (v, targetTrack, id, Type::marker)
 {
 }
@@ -59,7 +60,7 @@ bool MarkerClip::canGoOnTrack (Track& t)
     return t.isMarkerTrack();
 }
 
-void MarkerClip::valueTreePropertyChanged (ValueTree& v, const Identifier& i)
+void MarkerClip::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& i)
 {
     if (v == state)
     {

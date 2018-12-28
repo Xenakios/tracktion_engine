@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -15,7 +16,7 @@ extern void cleanUpDanglingPlugins();
 
 static const char* commandLineUID = "PluginScan";
 
-MemoryBlock createScanMessage (const XmlElement& xml)
+MemoryBlock createScanMessage (const juce::XmlElement& xml)
 {
     MemoryOutputStream mo;
     xml.writeToStream (mo, {}, true, false);
@@ -50,7 +51,7 @@ struct PluginScanMasterProcess  : private ChildProcessMaster
 
     bool sendScanRequest (AudioPluginFormat& format, const String& fileOrIdentifier, int requestID)
     {
-        XmlElement m ("SCAN");
+        juce::XmlElement m ("SCAN");
         m.setAttribute ("id", requestID);
         m.setAttribute ("type", format.getName());
         m.setAttribute ("file", fileOrIdentifier);
@@ -69,7 +70,7 @@ struct PluginScanMasterProcess  : private ChildProcessMaster
 
         for (;;)
         {
-            std::unique_ptr<XmlElement> reply (findReply (requestID));
+            auto reply = findReply (requestID);
 
             RelativeTime elapsed (Time::getCurrentTime() - start);
 
@@ -116,12 +117,12 @@ struct PluginScanMasterProcess  : private ChildProcessMaster
         }
     }
 
-    void handleMessage (const XmlElement& xml)
+    void handleMessage (const juce::XmlElement& xml)
     {
         if (xml.hasTagName ("FOUND"))
         {
             const ScopedLock sl (replyLock);
-            replies.add (new XmlElement (xml));
+            replies.add (new juce::XmlElement (xml));
         }
     }
 
@@ -152,11 +153,11 @@ private:
         }
     }
 
-    XmlElement* findReply (int requestID)
+    std::unique_ptr<XmlElement> findReply (int requestID)
     {
         for (int i = replies.size(); --i >= 0;)
             if (replies.getUnchecked(i)->getIntAttribute ("id") == requestID)
-                return replies.removeAndReturn (i);
+                return std::unique_ptr<XmlElement> (replies.removeAndReturn (i));
 
         return {};
     }
@@ -188,7 +189,7 @@ struct PluginScanSlaveProcess  : public ChildProcessSlave,
 
     void handleScanMessage (int requestID, const String& formatName, const String& fileOrIdentifier)
     {
-        XmlElement result ("FOUND");
+        juce::XmlElement result ("FOUND");
         result.setAttribute ("id", requestID);
 
         for (int i = 0; i < pluginFormatManager.getNumFormats(); ++i)
@@ -210,7 +211,7 @@ struct PluginScanSlaveProcess  : public ChildProcessSlave,
         sendMessageToMaster (createScanMessage (result));
     }
 
-    void handleMessage (const XmlElement& xml)
+    void handleMessage (const juce::XmlElement& xml)
     {
         if (xml.hasTagName ("SCAN"))
             handleScanMessage (xml.getIntAttribute ("id"),
@@ -230,7 +231,7 @@ private:
             triggerAsyncUpdate();
         }
     }
-    void handleMessageSafely (const XmlElement& m)
+    void handleMessageSafely (const juce::XmlElement& m)
     {
        #if JUCE_WINDOWS
         __try
@@ -432,6 +433,71 @@ void PluginManager::initialise()
     createBuiltInType<ReWirePlugin>();
    #endif
 
+   #if TRACKTION_AIR_WINDOWS
+    createBuiltInType<AirWindowsAcceleration>();
+    createBuiltInType<AirWindowsADClip7>();
+    createBuiltInType<AirWindowsADT>();
+    createBuiltInType<AirWindowsAtmosphere>();
+    createBuiltInType<AirWindowsAura>();
+    createBuiltInType<AirWindowsBassKit>();
+    createBuiltInType<AirWindowsBitGlitter>();
+    createBuiltInType<AirWindowsButterComp>();
+    createBuiltInType<AirWindowsButterComp2>();
+    createBuiltInType<AirWindowsChannel4>();
+    createBuiltInType<AirWindowsChannel5>();
+    createBuiltInType<AirWindowsChorusEnsemble>();
+    createBuiltInType<AirWindowsCrunchyGrooveWear>();
+    createBuiltInType<AirWindowsDeEss>();
+    createBuiltInType<AirWindowsDensity>();
+    createBuiltInType<AirWindowsDeRez>();
+    createBuiltInType<AirWindowsDesk>();
+    createBuiltInType<AirWindowsDesk4>();
+    createBuiltInType<AirWindowsDistance2>();
+    createBuiltInType<AirWindowsDrive>();
+    createBuiltInType<AirWindowsDrumSlam>();
+    createBuiltInType<AirWindowsDubSub>();
+    createBuiltInType<AirWindowsEdIsDim>();
+    createBuiltInType<AirWindowsElectroHat>();
+    createBuiltInType<AirWindowsEnergy>();
+    createBuiltInType<AirWindowsEnsemble>();
+    createBuiltInType<AirWindowsFathomFive>();
+    createBuiltInType<AirWindowsFloor>();
+    createBuiltInType<AirWindowsFromTape>();
+    createBuiltInType<AirWindowsGatelope>();
+    createBuiltInType<AirWindowsGolem>();
+    createBuiltInType<AirWindowsGrooveWear>();
+    createBuiltInType<AirWindowsGuitarConditioner>();
+    createBuiltInType<AirWindowsHardVacuum>();
+    createBuiltInType<AirWindowsHombre>();
+    createBuiltInType<AirWindowsMelt>();
+    createBuiltInType<AirWindowsNC17>();
+    createBuiltInType<AirWindowsNoise>();
+    createBuiltInType<AirWindowsNonlinearSpace>();
+    createBuiltInType<AirWindowsPoint>();
+    createBuiltInType<AirWindowsPop>();
+    createBuiltInType<AirWindowsPressure4>();
+    createBuiltInType<AirWindowsPurestDrive>();
+    createBuiltInType<AirWindowsPurestWarm>();
+    createBuiltInType<AirWindowsRighteous4>();
+    createBuiltInType<AirWindowsSingleEndedTriode>();
+    createBuiltInType<AirWindowsSlewOnly>();
+    createBuiltInType<AirWindowsSpiral2>();
+    createBuiltInType<AirWindowsStarChild>();
+    createBuiltInType<AirWindowsStereoFX>();
+    createBuiltInType<AirWindowsSubsOnly>();
+    createBuiltInType<AirWindowsSurge>();
+    createBuiltInType<AirWindowsSwell>();
+    createBuiltInType<AirWindowsTapeDust>();
+    createBuiltInType<AirWindowsThunder>();
+    createBuiltInType<AirWindowsToTape5>();
+    createBuiltInType<AirWindowsToVinyl4>();
+    createBuiltInType<AirWindowsTubeDesk>();
+    createBuiltInType<AirWindowsUnbox>();
+    createBuiltInType<AirWindowsVariMu>();
+    createBuiltInType<AirWindowsVoiceOfTheStarship>();
+    createBuiltInType<AirWindowsWider>();
+   #endif
+
     initialised = true;
     pluginFormatManager.addDefaultFormats();
 
@@ -460,7 +526,7 @@ void PluginManager::changeListenerCallback (ChangeBroadcaster*)
     engine.getPropertyStorage().setXmlProperty (getPluginListPropertyName(), *xml);
 }
 
-Plugin::Ptr PluginManager::createExistingPlugin (Edit& ed, const ValueTree& v)
+Plugin::Ptr PluginManager::createExistingPlugin (Edit& ed, const juce::ValueTree& v)
 {
     return createPlugin (ed, v, false);
 }
@@ -505,6 +571,8 @@ Plugin::Ptr PluginManager::createNewPlugin (Edit& ed, const String& type, const 
         {
             ValueTree v (IDs::PLUGIN);
             v.setProperty (IDs::type, type, nullptr);
+            if (ed.engine.getPluginManager().areGUIsLockedByDefault())
+                v.setProperty (IDs::windowLocked, true, nullptr);
 
             if (auto p = builtIn->create (PluginCreationInfo (ed, v, true)))
                 return p;
@@ -633,7 +701,7 @@ Plugin::Ptr PluginCache::getPluginFor (EditItemID pluginID) const
     return {};
 }
 
-Plugin::Ptr PluginCache::getPluginFor (const ValueTree& v) const
+Plugin::Ptr PluginCache::getPluginFor (const juce::ValueTree& v) const
 {
     const ScopedLock sl (lock);
 
@@ -648,7 +716,7 @@ Plugin::Ptr PluginCache::getPluginFor (const ValueTree& v) const
     return {};
 }
 
-Plugin::Ptr PluginCache::getOrCreatePluginFor (const ValueTree& v)
+Plugin::Ptr PluginCache::getOrCreatePluginFor (const juce::ValueTree& v)
 {
     const ScopedLock sl (lock);
 

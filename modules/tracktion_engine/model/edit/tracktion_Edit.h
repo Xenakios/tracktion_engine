@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -366,10 +367,6 @@ public:
     void dispatchPendingUpdatesSynchronously();
 
     //==============================================================================
-    void purgeOrphanFreezeAndProxyFiles();
-    juce::String getFreezeFilePrefix() const;
-    juce::Array<juce::File> getFrozenTracksFiles() const;
-
     bool areAnyClipsUsingFile (const AudioFile&);
     void cancelAllProxyGeneratorJobs() const;
 

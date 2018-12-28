@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -331,7 +332,7 @@ private:
 
     juce::ValueTree getConnectionsTree();
     struct WireList;
-    juce::ScopedPointer<WireList> sidechainWireList;
+    std::unique_ptr<WireList> sidechainWireList;
 
     JUCE_DECLARE_WEAK_REFERENCEABLE (Plugin)
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Plugin)

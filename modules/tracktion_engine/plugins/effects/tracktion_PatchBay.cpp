@@ -4,13 +4,14 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
 
-PatchBayPlugin::Wire::Wire (const ValueTree& v, UndoManager* um)  : state (v)
+PatchBayPlugin::Wire::Wire (const juce::ValueTree& v, UndoManager* um)  : state (v)
 {
     sourceChannelIndex.referTo (state, IDs::srcChan, um);
     destChannelIndex.referTo (state, IDs::dstChan, um);
@@ -20,7 +21,7 @@ PatchBayPlugin::Wire::Wire (const ValueTree& v, UndoManager* um)  : state (v)
 struct PatchBayPlugin::WireList  : public ValueTreeObjectList<PatchBayPlugin::Wire, CriticalSection>,
                                    private AsyncUpdater
 {
-    WireList (PatchBayPlugin& pb, const ValueTree& parent)
+    WireList (PatchBayPlugin& pb, const juce::ValueTree& parent)
         : ValueTreeObjectList<Wire, CriticalSection> (parent), patchbay (pb)
     {
         rebuildObjects();
@@ -31,14 +32,14 @@ struct PatchBayPlugin::WireList  : public ValueTreeObjectList<PatchBayPlugin::Wi
         freeObjects();
     }
 
-    bool isSuitableType (const ValueTree& v) const override { return v.hasType (IDs::CONNECTION); }
-    Wire* createNewObject (const ValueTree& v) override     { return new Wire (v, patchbay.getUndoManager()); }
-    void deleteObject (Wire* w) override                    { delete w; }
+    bool isSuitableType (const juce::ValueTree& v) const override { return v.hasType (IDs::CONNECTION); }
+    Wire* createNewObject (const juce::ValueTree& v) override     { return new Wire (v, patchbay.getUndoManager()); }
+    void deleteObject (Wire* w) override                          { delete w; }
 
     void newObjectAdded (Wire*) override                    { triggerAsyncUpdate(); }
     void objectRemoved (Wire*) override                     { triggerAsyncUpdate(); }
     void objectOrderChanged() override                      {}
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  { triggerAsyncUpdate(); }
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  { triggerAsyncUpdate(); }
 
     void handleAsyncUpdate() override
     {
@@ -51,7 +52,7 @@ struct PatchBayPlugin::WireList  : public ValueTreeObjectList<PatchBayPlugin::Wi
 //==============================================================================
 PatchBayPlugin::PatchBayPlugin (PluginCreationInfo info) : Plugin (info)
 {
-    list = new WireList (*this, state);
+    list.reset (new WireList (*this, state));
 
     if (info.isNewPlugin)
         for (int i = 0; i < 2; ++i)

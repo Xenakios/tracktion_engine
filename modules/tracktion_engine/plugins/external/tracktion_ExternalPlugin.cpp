@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -171,30 +172,6 @@ struct ExtraVSTCallbacks  : public juce::VSTPluginFormat::ExtraFunctions
 };
 #endif // JUCE_PLUGINHOST_VST
 
-
-//==============================================================================
-/** specialised AutomatableParameter for wet/dry.
-    Having a subclass just lets it label itself more nicely.
-*/
-struct PluginWetDryAutomatableParam  : public AutomatableParameter
-{
-    PluginWetDryAutomatableParam (const String& xmlTag, const String& name, ExternalPlugin& owner)
-        : AutomatableParameter (xmlTag, name, owner, { 0.0f, 1.0f })
-    {
-    }
-
-    ~PluginWetDryAutomatableParam()
-    {
-        notifyListenersOfDeletion();
-    }
-
-    String valueToString (float value) override     { return Decibels::toString (Decibels::gainToDecibels (value), 1); }
-    float stringToValue (const String& s) override  { return dbStringToDb (s); }
-
-    PluginWetDryAutomatableParam() = delete;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginWetDryAutomatableParam)
-};
-
 //==============================================================================
 class ExternalPlugin::PluginPlayHead  : public juce::AudioPlayHead
 {
@@ -291,10 +268,13 @@ private:
 //==============================================================================
 namespace
 {
-    void readBusLayout (AudioProcessor::BusesLayout& busesLayout, const ValueTree& state, AudioProcessor& plugin, bool isInput)
+    void readBusLayout (AudioProcessor::BusesLayout& busesLayout,
+                        const juce::ValueTree& state,
+                        AudioProcessor& plugin, bool isInput)
     {
         jassert (state.hasType (IDs::LAYOUT));
-        Array<AudioChannelSet>& targetBuses = (isInput ? busesLayout.inputBuses : busesLayout.outputBuses);
+        auto& targetBuses = (isInput ? busesLayout.inputBuses
+                                     : busesLayout.outputBuses);
         int maxNumBuses = 0;
 
         auto buses = state.getChildWithName (isInput ? IDs::INPUTS : IDs::OUTPUTS);
@@ -821,7 +801,7 @@ void ExternalPlugin::flushPluginStateToValueTree()
     }
 }
 
-void ExternalPlugin::restorePluginStateFromValueTree (const ValueTree& v)
+void ExternalPlugin::restorePluginStateFromValueTree (const juce::ValueTree& v)
 {
     String s;
 
@@ -1550,8 +1530,11 @@ void ExternalPlugin::buildParameterTree() const
         {
             if (auto param = dynamic_cast<const VSTXML::Param*> (vstXML->paramTree[i]))
             {
-                paramTree.rootNode->addSubNode (new AutomatableParameterTree::TreeNode (autoParamForParamNumbers [param->paramID]));
-                paramsInTree.add (param->paramID);
+                if (auto externalParameter = autoParamForParamNumbers[param->paramID])
+                {
+                    paramTree.rootNode->addSubNode (new AutomatableParameterTree::TreeNode (externalParameter));
+                    paramsInTree.add (param->paramID);
+                }
             }
 
             if (auto group = dynamic_cast<const VSTXML::Group*> (vstXML->paramTree[i]))
@@ -1564,11 +1547,9 @@ void ExternalPlugin::buildParameterTree() const
     }
 
     for (int i = 0; i < getNumAutomatableParameters(); ++i)
-    {
-        if (auto vstParam = dynamic_cast<ExternalAutomatableParameter*> (getAutomatableParameter(i).get()))
+        if (auto vstParam = dynamic_cast<ExternalAutomatableParameter*> (getAutomatableParameter (i).get()))
             if (! paramsInTree.contains (vstParam->getParameterIndex()))
                 paramTree.rootNode->addSubNode (new AutomatableParameterTree::TreeNode (autoParamForParamNumbers [vstParam->getParameterIndex()]));
-    }
 }
 
 void ExternalPlugin::buildParameterTree (const VSTXML::Group* group,
@@ -1579,8 +1560,11 @@ void ExternalPlugin::buildParameterTree (const VSTXML::Group* group,
     {
         if (auto param = dynamic_cast<const VSTXML::Param*> (group->paramTree[i]))
         {
-            treeNode->addSubNode (new AutomatableParameterTree::TreeNode (autoParamForParamNumbers [param->paramID]));
-            paramsInTree.add (param->paramID);
+            if (auto externalParameter = autoParamForParamNumbers[param->paramID])
+            {
+                treeNode->addSubNode (new AutomatableParameterTree::TreeNode (externalParameter));
+                paramsInTree.add (param->paramID);
+            }
         }
 
         if (auto subGroup = dynamic_cast<const VSTXML::Group*> (group->paramTree[i]))
@@ -1604,7 +1588,7 @@ AudioPluginInstance* ExternalPlugin::getAudioPluginInstance() const
     return pluginInstance.get();
 }
 
-void ExternalPlugin::valueTreePropertyChanged (ValueTree& v, const Identifier& id)
+void ExternalPlugin::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& id)
 {
     if (v == state && id == IDs::layout)
     {

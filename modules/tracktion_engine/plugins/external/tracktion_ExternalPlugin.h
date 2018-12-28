@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -161,6 +162,29 @@ private:
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ExternalPlugin)
+};
+
+//==============================================================================
+/** specialised AutomatableParameter for wet/dry.
+    Having a subclass just lets it label itself more nicely.
+ */
+struct PluginWetDryAutomatableParam  : public AutomatableParameter
+{
+    PluginWetDryAutomatableParam (const juce::String& xmlTag, const juce::String& name, Plugin& owner)
+        : AutomatableParameter (xmlTag, name, owner, { 0.0f, 1.0f })
+    {
+    }
+
+    ~PluginWetDryAutomatableParam()
+    {
+        notifyListenersOfDeletion();
+    }
+
+    juce::String valueToString (float value) override     { return juce::Decibels::toString (juce::Decibels::gainToDecibels (value), 1); }
+    float stringToValue (const juce::String& s) override  { return dbStringToDb (s); }
+
+    PluginWetDryAutomatableParam() = delete;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginWetDryAutomatableParam)
 };
 
 } // namespace tracktion_engine

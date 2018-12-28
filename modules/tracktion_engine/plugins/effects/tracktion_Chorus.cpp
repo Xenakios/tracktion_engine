@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -115,7 +116,7 @@ void ChorusPlugin::applyToBuffer (const AudioRenderContext& fc)
     delayBuffer.bufferPos = bufPos;
 }
 
-void ChorusPlugin::restorePluginStateFromValueTree (const ValueTree& v)
+void ChorusPlugin::restorePluginStateFromValueTree (const juce::ValueTree& v)
 {
     CachedValue<float>* cvsFloat[] = { &depthMs, &width, &mixProportion, &speedHz, nullptr };
     copyPropertiesToNullTerminatedCachedValues (v, cvsFloat);

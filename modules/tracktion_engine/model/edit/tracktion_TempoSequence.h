@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -222,7 +223,7 @@ struct EditTimecodeRemapperSnapshot
 private:
     struct ClipPos
     {
-        Clip* clip;
+        Selectable::WeakRef clip;
         double startBeat, endBeat, contentStartBeat;
     };
 

@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -106,6 +107,17 @@ bool AudioFile::deleteFile() const
 	bool ok = file.deleteFile();
 	jassert (ok);
     return ok;
+}
+
+bool AudioFile::deleteFiles (const juce::Array<juce::File>& files)
+{
+    bool allOK = true;
+
+    for (auto& f : files)
+        if (! AudioFile (f).deleteFile())
+            allOK = false;
+
+    return allOK;
 }
 
 bool AudioFile::isWavFile() const               { return file.hasFileExtension ("wav;bwav;bwf"); }

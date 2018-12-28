@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -142,10 +143,10 @@ FreezePointPlugin::ScopedTrackFreezer::~ScopedTrackFreezer()
     owner.updateTrackFreezeStatus();
 }
 
-FreezePointPlugin::ScopedTrackFreezer* FreezePointPlugin::createTrackFreezer (const Plugin::Ptr& p)
+std::unique_ptr<FreezePointPlugin::ScopedTrackFreezer> FreezePointPlugin::createTrackFreezer (const Plugin::Ptr& p)
 {
     if (auto fp = dynamic_cast<FreezePointPlugin*> (p.get()))
-        return new ScopedTrackFreezer (*fp);
+        return std::unique_ptr<FreezePointPlugin::ScopedTrackFreezer> (new ScopedTrackFreezer (*fp));
 
     return {};
 }

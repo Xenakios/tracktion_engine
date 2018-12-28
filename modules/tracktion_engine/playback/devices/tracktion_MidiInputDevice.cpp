@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -242,7 +243,7 @@ void MidiInputDevice::setEnabled (bool b)
     }
 }
 
-void MidiInputDevice::loadProps (const XmlElement* n)
+void MidiInputDevice::loadProps (const juce::XmlElement* n)
 {
     endToEndEnabled = true;
     recordingEnabled = true;
@@ -279,7 +280,7 @@ void MidiInputDevice::loadProps (const XmlElement* n)
     }
 }
 
-void MidiInputDevice::saveProps (XmlElement& n)
+void MidiInputDevice::saveProps (juce::XmlElement& n)
 {
     n.setAttribute ("enabled", enabled);
     n.setAttribute ("endToEnd", endToEndEnabled);

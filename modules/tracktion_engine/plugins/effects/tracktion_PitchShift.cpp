@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -24,7 +25,7 @@ struct PitchShiftPlugin::Pimpl
         {
             mode = newMode;
             elastiqueOptions = newOptions;
-            timestretcher = new TimeStretcher();
+            timestretcher.reset (new TimeStretcher());
         }
 
         if (! timestretcher->isInitialised())
@@ -94,7 +95,7 @@ struct PitchShiftPlugin::Pimpl
 
     PitchShiftPlugin& owner;
 
-    ScopedPointer<TimeStretcher> timestretcher;
+    std::unique_ptr<TimeStretcher> timestretcher;
     TimeStretcher::Mode mode;
     TimeStretcher::StretcherAdditionalOptions elastiqueOptions;
 
@@ -176,7 +177,7 @@ String PitchShiftPlugin::getSelectableDescription()
     return TRANS("Pitch Shifter Plugin");
 }
 
-void PitchShiftPlugin::restorePluginStateFromValueTree (const ValueTree& v)
+void PitchShiftPlugin::restorePluginStateFromValueTree (const juce::ValueTree& v)
 {
     CachedValue<float>* cvsFloat[]  = { &semitonesValue, nullptr };
     CachedValue<int>* cvsInt[]      = { &mode, nullptr };

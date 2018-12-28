@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -29,7 +30,7 @@ static String getDefaultOutputName (int i)
 }
 
 //==============================================================================
-RackConnection::RackConnection (const ValueTree& v, UndoManager* um)
+RackConnection::RackConnection (const juce::ValueTree& v, UndoManager* um)
     : state (v)
 {
     sourceID.referTo (state, IDs::src, um);
@@ -342,7 +343,7 @@ struct RackType::PluginRenderingInfo
 //==============================================================================
 struct RackType::RackPluginList  : public ValueTreeObjectList<RackType::PluginInfo>
 {
-    RackPluginList (RackType& t, const ValueTree& parent)
+    RackPluginList (RackType& t, const juce::ValueTree& parent)
         : ValueTreeObjectList<PluginInfo> (parent), type (t)
     {
         CRASH_TRACER
@@ -354,12 +355,12 @@ struct RackType::RackPluginList  : public ValueTreeObjectList<RackType::PluginIn
         freeObjects();
     }
 
-    bool isSuitableType (const ValueTree& v) const override
+    bool isSuitableType (const juce::ValueTree& v) const override
     {
         return v.hasType (IDs::PLUGININSTANCE);
     }
 
-    PluginInfo* createNewObject (const ValueTree& v) override
+    PluginInfo* createNewObject (const juce::ValueTree& v) override
     {
         CRASH_TRACER
         auto* i = new PluginInfo();
@@ -374,10 +375,10 @@ struct RackType::RackPluginList  : public ValueTreeObjectList<RackType::PluginIn
         delete p;
     }
 
-    void newObjectAdded (PluginInfo*) override                              { sendChange(); }
-    void objectRemoved (PluginInfo*) override                               { sendChange(); }
-    void objectOrderChanged() override                                      { sendChange(); }
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  { sendChange(); }
+    void newObjectAdded (PluginInfo*) override                                    { sendChange(); }
+    void objectRemoved (PluginInfo*) override                                     { sendChange(); }
+    void objectOrderChanged() override                                            { sendChange(); }
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  { sendChange(); }
 
     void sendChange()
     {
@@ -391,7 +392,7 @@ struct RackType::RackPluginList  : public ValueTreeObjectList<RackType::PluginIn
 
 struct RackType::ConnectionList  : public ValueTreeObjectList<RackConnection>
 {
-    ConnectionList (RackType& t, const ValueTree& parent)
+    ConnectionList (RackType& t, const juce::ValueTree& parent)
         : ValueTreeObjectList<RackConnection> (parent), type (t)
     {
         CRASH_TRACER
@@ -403,12 +404,12 @@ struct RackType::ConnectionList  : public ValueTreeObjectList<RackConnection>
         freeObjects();
     }
 
-    bool isSuitableType (const ValueTree& v) const override
+    bool isSuitableType (const juce::ValueTree& v) const override
     {
         return v.hasType (IDs::CONNECTION);
     }
 
-    RackConnection* createNewObject (const ValueTree& v) override
+    RackConnection* createNewObject (const juce::ValueTree& v) override
     {
         if (! type.edit.isLoading())
             TRACKTION_ASSERT_MESSAGE_THREAD
@@ -423,10 +424,10 @@ struct RackType::ConnectionList  : public ValueTreeObjectList<RackConnection>
         delete t;
     }
 
-    void newObjectAdded (RackConnection*) override                          { sendChange(); }
-    void objectRemoved (RackConnection*) override                           { sendChange(); }
-    void objectOrderChanged() override                                      { sendChange(); }
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  { sendChange(); }
+    void newObjectAdded (RackConnection*) override                                { sendChange(); }
+    void objectRemoved (RackConnection*) override                                 { sendChange(); }
+    void objectOrderChanged() override                                            { sendChange(); }
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  { sendChange(); }
 
     void sendChange()
     {
@@ -453,12 +454,12 @@ struct RackType::WindowStateList  : public ValueTreeObjectList<WindowState>
         freeObjects();
     }
 
-    bool isSuitableType (const ValueTree& v) const override
+    bool isSuitableType (const juce::ValueTree& v) const override
     {
         return v.hasType (IDs::WINDOWSTATE);
     }
 
-    WindowState* createNewObject (const ValueTree& v) override
+    WindowState* createNewObject (const juce::ValueTree& v) override
     {
         CRASH_TRACER
         return new WindowState (type, v);
@@ -470,10 +471,10 @@ struct RackType::WindowStateList  : public ValueTreeObjectList<WindowState>
         delete t;
     }
 
-    void newObjectAdded (WindowState*) override                             {}
-    void objectRemoved (WindowState*) override                              {}
-    void objectOrderChanged() override                                      {}
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  {}
+    void newObjectAdded (WindowState*) override                                   {}
+    void objectRemoved (WindowState*) override                                    {}
+    void objectOrderChanged() override                                            {}
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  {}
 
     RackType& type;
 
@@ -521,7 +522,7 @@ struct RackType::RenderContext
 };
 
 //==============================================================================
-RackType::RackType (const ValueTree& v, Edit& owner)
+RackType::RackType (const juce::ValueTree& v, Edit& owner)
     : MacroParameterElement (owner, v),
       edit (owner), state (v),
       rackID (EditItemID::fromID (state))
@@ -576,7 +577,7 @@ RackType::~RackType()
     windowStateList.reset();
 }
 
-static ValueTree createInOrOut (const Identifier& type, const String& name)
+static ValueTree createInOrOut (const juce::Identifier& type, const String& name)
 {
     ValueTree v (type);
     v.setProperty (IDs::name, name, nullptr);
@@ -610,7 +611,7 @@ void RackType::addDefaultOutputs()
 
 namespace
 {
-    bool hasAnyModifierAssignmentsRecursive (const ValueTree& vt)
+    bool hasAnyModifierAssignmentsRecursive (const juce::ValueTree& vt)
     {
         if (vt.hasType (IDs::MODIFIERASSIGNMENTS) && vt.getNumChildren() > 0)
             return true;
@@ -623,7 +624,7 @@ namespace
     }
 }
 
-Result RackType::restoreStateFromValueTree (const ValueTree& vt)
+Result RackType::restoreStateFromValueTree (const juce::ValueTree& vt)
 {
     // First check to see if the incoming state has any modifier assignments
     if (hasAnyModifierAssignmentsRecursive (vt))
@@ -1023,22 +1024,32 @@ void RackType::checkConnections()
                 continue;
             }
 
+            // Avoid stripping connections when the Edit hasn't loaded the plugins as the channels will be 0
+            if (! edit.shouldLoadPlugins())
+                continue;
+
             // Check for connections going to no longer available plugin IO pins
-            if (auto* ep = dynamic_cast<ExternalPlugin*> (getPluginForID (rc->sourceID)))
+            if (auto ep = dynamic_cast<ExternalPlugin*> (getPluginForID (rc->sourceID)))
             {
-                if (rc->sourcePin < 0 || rc->sourcePin > ep->getNumOutputs())
+                if (ep->getAudioPluginInstance() != nullptr)
                 {
-                    state.removeChild (rc->state, getUndoManager());
-                    continue;
+                    if (rc->sourcePin < 0 || rc->sourcePin > ep->getNumOutputs())
+                    {
+                        state.removeChild (rc->state, getUndoManager());
+                        continue;
+                    }
                 }
             }
 
-            if (auto* ep = dynamic_cast<ExternalPlugin*> (getPluginForID (rc->destID)))
+            if (auto ep = dynamic_cast<ExternalPlugin*> (getPluginForID (rc->destID)))
             {
-                if (rc->destPin < 0 || rc->destPin > ep->getNumInputs())
+                if (ep->getAudioPluginInstance() != nullptr)
                 {
-                    state.removeChild (rc->state, getUndoManager());
-                    continue;
+                    if (rc->destPin < 0 || rc->destPin > ep->getNumInputs())
+                    {
+                        state.removeChild (rc->state, getUndoManager());
+                        continue;
+                    }
                 }
             }
         }
@@ -1083,7 +1094,7 @@ static bool findPluginOrModifierWithID (ValueTree& rack, EditItemID itemID)
     return false;
 }
 
-static int countNumConnections (ValueTree& rack, const Identifier& type)
+static int countNumConnections (ValueTree& rack, const juce::Identifier& type)
 {
     int count = 0;
 
@@ -1224,7 +1235,7 @@ juce::String RackType::getSelectableDescription()
 }
 
 //==============================================================================
-static int findIndexOfNthInstanceOf (ValueTree& parent, const Identifier& type, int index)
+static int findIndexOfNthInstanceOf (ValueTree& parent, const juce::Identifier& type, int index)
 {
     int count = 0;
 
@@ -1989,7 +2000,7 @@ ModifierList& RackType::getModifierList() const noexcept
 //==============================================================================
 struct RackTypeList::ValueTreeList  : public ValueTreeObjectList<RackType>
 {
-    ValueTreeList (RackTypeList& l, const ValueTree& parent)
+    ValueTreeList (RackTypeList& l, const juce::ValueTree& parent)
         : ValueTreeObjectList<RackType> (parent), list (l)
     {
         // NB: rebuildObjects() is called after construction so that the edit has a valid
@@ -2001,12 +2012,12 @@ struct RackTypeList::ValueTreeList  : public ValueTreeObjectList<RackType>
         freeObjects();
     }
 
-    bool isSuitableType (const ValueTree& v) const override
+    bool isSuitableType (const juce::ValueTree& v) const override
     {
         return v.hasType (IDs::RACK);
     }
 
-    RackType* createNewObject (const ValueTree& v) override
+    RackType* createNewObject (const juce::ValueTree& v) override
     {
         auto t = new RackType (v, list.edit);
         t->incReferenceCount();
@@ -2019,10 +2030,10 @@ struct RackTypeList::ValueTreeList  : public ValueTreeObjectList<RackType>
         t->decReferenceCount();
     }
 
-    void newObjectAdded (RackType*) override                                { sendChange(); }
-    void objectRemoved (RackType*) override                                 { sendChange(); }
-    void objectOrderChanged() override                                      { sendChange(); }
-    void valueTreePropertyChanged (ValueTree&, const Identifier&) override  { sendChange(); }
+    void newObjectAdded (RackType*) override                                      { sendChange(); }
+    void objectRemoved (RackType*) override                                       { sendChange(); }
+    void objectOrderChanged() override                                            { sendChange(); }
+    void valueTreePropertyChanged (ValueTree&, const juce::Identifier&) override  { sendChange(); }
 
     void sendChange()
     {
@@ -2039,14 +2050,14 @@ RackTypeList::RackTypeList (Edit& ed) : edit (ed)
 {
 }
 
-void RackTypeList::initialise (const ValueTree& v)
+void RackTypeList::initialise (const juce::ValueTree& v)
 {
     CRASH_TRACER
 
     state = v;
     jassert (state.hasType (IDs::RACKS));
 
-    list = new ValueTreeList (*this, v);
+    list.reset (new ValueTreeList (*this, v));
     list->rebuildObjects();
 }
 
@@ -2118,7 +2129,7 @@ RackType::Ptr RackTypeList::addNewRack()
     return p;
 }
 
-RackType::Ptr RackTypeList::addRackTypeFrom (const ValueTree& rackType)
+RackType::Ptr RackTypeList::addRackTypeFrom (const juce::ValueTree& rackType)
 {
     if (! rackType.hasType (IDs::RACK))
         return {};
@@ -2149,12 +2160,8 @@ void RackTypeList::importRackFiles (const Array<File>& files)
     int oldNumRacks = size();
 
     for (auto& f : files)
-    {
-        ScopedPointer<XmlElement> xml (XmlDocument::parse (f));
-
-        if (xml != nullptr)
+        if (auto xml = std::unique_ptr<XmlElement> (XmlDocument::parse (f)))
             addRackTypeFrom (ValueTree::fromXml (*xml));
-    }
 
     if (oldNumRacks < size())
         edit.engine.getUIBehaviour().showWarningMessage (TRANS("Rack types added!"));
@@ -2180,7 +2187,7 @@ void RackType::updateRenderContext()
 }
 
 //==============================================================================
-void RackType::valueTreeChildAdded (ValueTree&, ValueTree& c)
+void RackType::valueTreeChildAdded (ValueTree&, juce::ValueTree& c)
 {
     if (matchesAnyOf (c.getType(), { IDs::OUTPUT, IDs::INPUT }))
         updateTempBuferSizes();
@@ -2188,7 +2195,7 @@ void RackType::valueTreeChildAdded (ValueTree&, ValueTree& c)
     triggerUpdate();
 }
 
-void RackType::valueTreeChildRemoved (ValueTree&, ValueTree& c, int)
+void RackType::valueTreeChildRemoved (ValueTree&, juce::ValueTree& c, int)
 {
     if (matchesAnyOf (c.getType(), { IDs::OUTPUT, IDs::INPUT }))
         updateTempBuferSizes();
@@ -2200,7 +2207,7 @@ void RackType::valueTreeChildOrderChanged (ValueTree&, int, int)   {}
 void RackType::valueTreeParentChanged (ValueTree&)                 { triggerUpdate(); }
 void RackType::valueTreeRedirected (ValueTree&)                    { triggerUpdate(); }
 
-void RackType::valueTreePropertyChanged (ValueTree& v, const Identifier& ident)
+void RackType::valueTreePropertyChanged (ValueTree& v, const juce::Identifier& ident)
 {
     if (v.hasType (IDs::PLUGININSTANCE) || v.hasType (IDs::CONNECTION))
         if (ident != IDs::x && ident != IDs::y && ident != IDs::windowLocked && ident != IDs::windowPos)

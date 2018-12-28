@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -80,7 +81,7 @@ public:
     juce::Array<Track*> getAllSubTracks (bool recursive) const;
     juce::Array<AudioTrack*> getAllAudioSubTracks (bool recursive) const;
 
-    TrackList* getSubTrackList() const                          { return trackList; }
+    TrackList* getSubTrackList() const                          { return trackList.get(); }
     bool hasSubTracks() const                                   { return trackList != nullptr; }
     virtual Clip* findClipForID (EditItemID) const;
 
@@ -188,7 +189,7 @@ protected:
 
 private:
     AutomatableParameter* currentAutoParam = nullptr;
-    juce::ScopedPointer<TrackList> trackList;
+    std::unique_ptr<TrackList> trackList;
     std::unique_ptr<ModifierList> modifierList;
 
     juce::CachedValue<juce::String> trackName;

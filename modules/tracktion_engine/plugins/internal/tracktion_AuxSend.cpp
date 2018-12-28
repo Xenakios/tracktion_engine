@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -193,7 +194,7 @@ StringArray AuxSendPlugin::getBusNames (Edit& edit)
     return buses;
 }
 
-void AuxSendPlugin::restorePluginStateFromValueTree (const ValueTree& v)
+void AuxSendPlugin::restorePluginStateFromValueTree (const juce::ValueTree& v)
 {
     CachedValue<float>* cvsFloat[]  = { &gainLevel, nullptr };
     CachedValue<int>* cvsInt[]      = { &busNumber, nullptr };

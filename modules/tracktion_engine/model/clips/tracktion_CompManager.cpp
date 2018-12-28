@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -556,7 +557,7 @@ void CompManager::addOrRemoveListenerIfNeeded()
         clip.state.addListener (this);
 }
 
-void CompManager::valueTreePropertyChanged (ValueTree& tree, const Identifier& id)
+void CompManager::valueTreePropertyChanged (ValueTree& tree, const juce::Identifier& id)
 {
     if (tree != clip.state)
         return;
@@ -752,10 +753,10 @@ void WaveCompManager::updateThumbnails (Component& comp, OwnedArray<SmartThumbna
 
 File WaveCompManager::getCurrentCompFile() const
 {
-    if (lastHash == 0)
-        return {};
+    if (lastHash != 0)
+        return TemporaryFileManager::getFileForCachedCompRender (clip, lastHash).getFile();
 
-    return clip.getCompFileFor (lastHash).getFile();
+    return {};
 }
 
 //==============================================================================
@@ -1212,7 +1213,7 @@ static void beginCompGeneration (WaveAudioClip& clip, int takeIndex)
     auto& cm = clip.getCompManager();
 
     clip.edit.engine.getAudioFileManager()
-       .proxyGenerator.beginJob (new CompGeneratorJob (clip, clip.getCompFileFor (cm.getTakeHash (takeIndex))));
+       .proxyGenerator.beginJob (new CompGeneratorJob (clip, TemporaryFileManager::getFileForCachedCompRender (clip, cm.getTakeHash (takeIndex))));
 }
 
 void WaveCompManager::timerCallback()
@@ -1231,13 +1232,14 @@ void WaveCompManager::timerCallback()
     if (isTakeComp (lastRenderedTake) && hash != lastHash)
     {
         // stops the last render job and deletes the source
-        clip.edit.engine.getAudioFileManager().proxyGenerator.deleteProxy (clip.getCompFileFor (lastHash));
+        clip.edit.engine.getAudioFileManager().proxyGenerator
+           .deleteProxy (TemporaryFileManager::getFileForCachedCompRender (clip, lastHash));
     }
 
     lastRenderedTake = takeIndex;
     lastHash = hash;
 
-    lastCompFile = clip.getCompFileFor (lastHash);
+    lastCompFile = TemporaryFileManager::getFileForCachedCompRender (clip, lastHash);
     const bool isComp = isTakeComp (lastRenderedTake);
 
     if (isComp && (! lastCompFile.isValid()))
@@ -1319,15 +1321,15 @@ MidiList* MidiCompManager::getSequenceLooped (int index)
     if (sourceSequence == nullptr)
         return {};
 
-    return cachedLoopSequences.set (index, clip.createSequenceLooped (*sourceSequence));
+    return cachedLoopSequences.set (index, clip.createSequenceLooped (*sourceSequence).release());
 }
 
 //==============================================================================
 juce::int64 MidiCompManager::getBaseTakeHash (int takeIndex) const
 {
     return takeIndex
-        ^ (int64) (clip.getLoopLengthBeats() * 153.0)
-        ^ (int64) (clip.getLoopStartBeats() * 264.0);
+            ^ (int64) (clip.getLoopLengthBeats() * 153.0)
+            ^ (int64) (clip.getLoopStartBeats() * 264.0);
 }
 
 double MidiCompManager::getTakeLength (int takeIndex) const
@@ -1349,6 +1351,7 @@ void MidiCompManager::discardCachedData()
 void MidiCompManager::triggerCompRender()
 {
     CRASH_TRACER
+
     if (! isTakeComp (getActiveTakeIndex()))
         return;
 
@@ -1426,16 +1429,16 @@ void MidiCompManager::createComp (const ValueTree& takeTree)
         auto um = getUndoManager();
         dest->clear (um);
 
-        const int numSegments = takeTree.getNumChildren();
-        const int numTakes = getNumTakes();
-        const double loopStart = clip.getLoopStartBeats();
+        const auto numSegments = takeTree.getNumChildren();
+        const auto numTakes = getNumTakes();
+        const auto loopStart = clip.getLoopStartBeats();
         double startBeat = 0.0;
 
         for (int i = 0; i < numSegments; ++i)
         {
             auto compSegment = takeTree.getChild (i);
-            const int takeIndex = int (compSegment.getProperty (IDs::takeIndex));
-            const double endBeat = double (compSegment.getProperty (IDs::endTime));
+            const auto takeIndex = static_cast<int> (compSegment.getProperty (IDs::takeIndex));
+            const auto endBeat = static_cast<double> (compSegment.getProperty (IDs::endTime));
 
             if (isPositiveAndBelow (takeIndex, numTakes))
             {
@@ -1463,7 +1466,7 @@ void MidiCompManager::createComp (const ValueTree& takeTree)
 
                     for (auto e : src->getControllerEvents())
                     {
-                        const double b = e->getBeatPosition();
+                        auto b = e->getBeatPosition();
 
                         if (b > endBeat)
                             break;
@@ -1474,7 +1477,7 @@ void MidiCompManager::createComp (const ValueTree& takeTree)
 
                     for (auto e : src->getSysexEvents())
                     {
-                        const double b = e->getBeatPosition();
+                        auto b = e->getBeatPosition();
 
                         if (b > endBeat)
                             break;

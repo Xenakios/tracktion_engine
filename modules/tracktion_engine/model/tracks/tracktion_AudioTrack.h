@@ -4,8 +4,9 @@
   '-.  .-'|  .--' ,-.  | .--'|     /'-.  .-',--.| .-. ||      \   Tracktion Software
     |  |  |  |  \ '-'  \ `--.|  \  \  |  |  |  |' '-' '|  ||  |       Corporation
     `---' `--'   `--`--'`---'`--'`--' `---' `--' `---' `--''--'    www.tracktion.com
-*/
 
+    Tracktion Engine uses a GPL/commercial licence - see LICENCE.md for details.
+*/
 
 namespace tracktion_engine
 {
@@ -77,7 +78,6 @@ public:
     void setFrozen (bool, FreezeType) override;
     void insertFreezePointAfterPlugin (const Plugin::Ptr&);
     void removeFreezePoint();
-    static juce::String getTrackFreezePrefix() noexcept             { return "trackFreeze_"; }
     void freezeTrackAsync() const;
 
     //==============================================================================
