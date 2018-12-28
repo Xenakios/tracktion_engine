@@ -187,11 +187,15 @@ public:
 		{
 			PopupMenu plugmenu;
 			engine.getPluginManager().knownPluginList.addToMenu(plugmenu, KnownPluginList::sortByManufacturer);
+			const auto& builtins = engine.getPluginManager().getBuiltInTypes();
+			for (int i = 0; i < builtins.size(); ++i)
+				plugmenu.addItem(1000 + i, builtins[i]->type, true, false);
 			int r = plugmenu.show();
 			if (r > 0)
 			{
 				int plugId = engine.getPluginManager().knownPluginList.getIndexChosenByMenu(r);
 				auto plugDesc = engine.getPluginManager().knownPluginList.getType(plugId);
+				
 				if (plugDesc != nullptr)
 				{
 					auto plugInst = edit.getPluginCache().createNewPlugin(te::ExternalPlugin::xmlTypeName,

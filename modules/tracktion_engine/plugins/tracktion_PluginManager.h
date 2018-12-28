@@ -71,7 +71,7 @@ public:
     //==============================================================================
     // this can be set to provide a function that gets called when a scan finishes
     std::function<void()> scanCompletedCallback;
-
+	const juce::OwnedArray<BuiltInType>& getBuiltInTypes() const { return builtInTypes; }
 private:
     Engine& engine;
 
