@@ -36,8 +36,14 @@ public:
 	PluginWindow(te::Plugin& p) : DocumentWindow(p.getName(),Colours::cyan,0), m_plugin(p) 
 	{
 		te::ExternalPlugin* inst = dynamic_cast<te::ExternalPlugin*>(&p);
-		m_ed = inst->getAudioPluginInstance()->createEditorIfNeeded();
-		setContentOwned(m_ed,true);
+		if (inst!=nullptr)
+        {
+            m_ed = inst->getAudioPluginInstance()->createEditorIfNeeded();
+            setContentOwned(m_ed,true);
+        } else
+        {
+            p.showWindowExplicitly();
+        }
 		m_slave = std::make_unique<te::PluginWindowConnection::Slave>(*this);
 	}
 	te::PluginWindowConnection::Slave* getSlaveConnection()
@@ -131,7 +137,11 @@ public:
 		timePitchModeCombo.onChange = [this]() { updateTempoAndKey(); };
 		settingsButton.onClick  = [this] { EngineHelpers::showAudioDeviceSettings (engine); };
         playPauseButton.onClick = [this] { EngineHelpers::togglePlay (edit); };
-        loadFileButton.onClick  = [this] { EngineHelpers::browseForAudioFile (engine, [this] (const File& f) { setFile (f); }); };
+        loadFileButton.onClick  = [this]
+        {
+            EngineHelpers::browseForAudioFile (engine, [this] (const File& f) { setFile (f); });
+            
+        };
 
         rootNoteEditor.onFocusLost = [this] { updateTempoAndKey(); };
         rootTempoEditor.onFocusLost = [this] { updateTempoAndKey(); };
@@ -195,39 +205,45 @@ public:
 			{
 				int plugId = engine.getPluginManager().knownPluginList.getIndexChosenByMenu(r);
 				auto plugDesc = engine.getPluginManager().knownPluginList.getType(plugId);
-				
+                te::Plugin::Ptr plugInst = nullptr;
 				if (plugDesc != nullptr)
 				{
-					auto plugInst = edit.getPluginCache().createNewPlugin(te::ExternalPlugin::xmlTypeName,
+					plugInst = edit.getPluginCache().createNewPlugin(te::ExternalPlugin::xmlTypeName,
 						*plugDesc);
-					if (plugInst != nullptr)
-					{
-						String canAdd = clip->canAddClipPlugin(*plugInst);
-						if (canAdd.isEmpty())
-						{
-							bool suc = clip->addClipPlugin(plugInst, selectionManager);
-							if (!suc)
-							{
-								Logger::writeToLog("Could not add plugin to clip");
-							}
-							else
-							{
-								plugInst->showWindowExplicitly();
-								thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
-							}
-						}
-						else
-						{
-							Logger::writeToLog("can add clip plugin error : " + canAdd);
-						}
-					}
-					else
-					{
-						Logger::writeToLog("Could not create plugin");
-					}
+                } else
+                {
+                    PluginDescription bogusDesc;
+                    plugInst = edit.getPluginCache().createNewPlugin(builtins[r-1000]->type,
+                                                                     bogusDesc);
+                }
+                if (plugInst != nullptr)
+                {
+                    String canAdd = clip->canAddClipPlugin(*plugInst);
+                    if (canAdd.isEmpty())
+                    {
+                        bool suc = clip->addClipPlugin(plugInst, selectionManager);
+                        if (!suc)
+                        {
+                            Logger::writeToLog("Could not add plugin to clip");
+                        }
+                        else
+                        {
+                            plugInst->showWindowExplicitly();
+                            thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+                        }
+                    }
+                    else
+                    {
+                        Logger::writeToLog("can add clip plugin error : " + canAdd);
+                    }
+                }
+                else
+                {
+                    Logger::writeToLog("Could not create plugin");
+                }
 
-				}
-			}
+            }
+			
 		}
 	}
 
@@ -258,9 +274,7 @@ private:
     te::Edit edit { engine, te::createEmptyEdit(), te::Edit::forEditing, nullptr, 0 };
     te::TransportControl& transport { edit.getTransport() };
 	te::SelectionManager selectionManager;
-	FileChooser audioFileChooser { "Please select an audio file to load...",
-                                   engine.getPropertyStorage().getDefaultLoadSaveDirectory ("pitchAndTimeExample"),
-                                   engine.getAudioFileFormatManager().readFormatManager.getWildcardForAllFormats() };
+	
 
     TextButton settingsButton { "Settings" }, playPauseButton { "Play" }, loadFileButton { "Load file" };
     Thumbnail thumbnail { transport };
