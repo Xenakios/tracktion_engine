@@ -40,11 +40,8 @@ public:
         {
             m_ed = inst->getAudioPluginInstance()->createEditorIfNeeded();
             setContentOwned(m_ed,true);
-        } else
-        {
-            p.showWindowExplicitly();
-        }
-		m_slave = std::make_unique<te::PluginWindowConnection::Slave>(*this);
+			m_slave = std::make_unique<te::PluginWindowConnection::Slave>(*this);
+        } 
 	}
 	te::PluginWindowConnection::Slave* getSlaveConnection()
 	{
@@ -178,6 +175,7 @@ public:
 
     ~PitchAndTimeComponent()
     {
+		Logger::writeToLog(edit.state.toXmlString());
 		thumbnail.setFile({});
 		transport.freePlaybackContext();
 		engine.getAudioFileManager().releaseAllFiles();
@@ -228,8 +226,11 @@ public:
                         }
                         else
                         {
-                            plugInst->showWindowExplicitly();
-                            thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
+                            if (plugInst->getPluginType() == String(te::ExternalPlugin::xmlTypeName))
+								plugInst->showWindowExplicitly();
+							plugInst->
+							Logger::writeToLog(plugInst->state.toXmlString());
+							thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
                         }
                     }
                     else
@@ -311,7 +312,7 @@ private:
 		{
 			thumbnail.setFile(clip->getPlaybackFile());
 			Logger::writeToLog(clip->getPlaybackFile().getFile().getFullPathName()+" num chans " + String(clip->getPlaybackFile().getNumChannels()));
-			Logger::writeToLog(edit.state.toXmlString());
+			
 		}
 	}
 	void selectableObjectAboutToBeDeleted(tracktion_engine::Selectable *) override
@@ -333,16 +334,19 @@ private:
 			
 			if (clip->canHaveEffects())
 			{
-				clip->enableEffects(true, false);
-				te::ClipEffect::createEffectAndAddToValueTree(edit,
-                  clip->state.getChildWithName (te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
-				//String cmdlinetemplate = "modify radical 2 $INFILE $OUTFILE 4 0.33";
-                String cmdlinetemplate = "spec/4096/3 : blur blur $INFILE $OUTFILE 100.0";
-                clip->state.getChildWithName(te::IDs::EFFECTS).getChild(0).setProperty("cmdline", cmdlinetemplate, nullptr);
-				cmdlinetemplate = "modify brassage 5 $INFILE $OUTFILE 0.8";
-				//te::ClipEffect::createEffectAndAddToValueTree(edit,
-				//	clip->state.getChildWithName(te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
-				//clip->state.getChildWithName(te::IDs::EFFECTS).getChild(1).setProperty("cmdline", cmdlinetemplate, nullptr);
+				if (false)
+				{
+					clip->enableEffects(true, false);
+					te::ClipEffect::createEffectAndAddToValueTree(edit,
+						clip->state.getChildWithName(te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
+					//String cmdlinetemplate = "modify radical 2 $INFILE $OUTFILE 4 0.33";
+					String cmdlinetemplate = "spec/4096/3 : blur blur $INFILE $OUTFILE 100.0";
+					clip->state.getChildWithName(te::IDs::EFFECTS).getChild(0).setProperty("cmdline", cmdlinetemplate, nullptr);
+					cmdlinetemplate = "modify brassage 5 $INFILE $OUTFILE 0.8";
+					//te::ClipEffect::createEffectAndAddToValueTree(edit,
+					//	clip->state.getChildWithName(te::IDs::EFFECTS), te::ClipEffect::EffectType::commandLineProcess, -1);
+					//clip->state.getChildWithName(te::IDs::EFFECTS).getChild(1).setProperty("cmdline", cmdlinetemplate, nullptr);
+				}
 			}
 			else
 				Logger::writeToLog("Can't have clip effect");
@@ -404,7 +408,7 @@ private:
 			
 			
 			thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
-            Logger::writeToLog(edit.state.toXmlString());
+            //Logger::writeToLog(edit.state.toXmlString());
 			
         }
     }
