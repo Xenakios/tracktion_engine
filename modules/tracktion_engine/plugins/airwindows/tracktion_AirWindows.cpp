@@ -264,6 +264,7 @@ const char* AirWindowsGuitarConditioner::xmlTypeName = "airwindows_guitarconditi
 const char* AirWindowsHardVacuum::xmlTypeName = "airwindows_hardvacuum";
 const char* AirWindowsHombre::xmlTypeName = "airwindows_hombre";
 const char* AirWindowsMelt::xmlTypeName = "airwindows_melt";
+const char* AirWindowsMidSide::xmlTypeName = "airwindows_midside";
 const char* AirWindowsNC17::xmlTypeName = "airwindows_nc17";
 const char* AirWindowsNoise::xmlTypeName = "airwindows_noise";
 const char* AirWindowsNonlinearSpace::xmlTypeName = "airwindows_nonlinearspace";
@@ -327,6 +328,7 @@ AirWindowsGuitarConditioner::Type AirWindowsGuitarConditioner::pluginType = AirW
 AirWindowsHardVacuum::Type AirWindowsHardVacuum::pluginType = AirWindowsPlugin::emulation;
 AirWindowsHombre::Type AirWindowsHombre::pluginType = AirWindowsPlugin::delay;
 AirWindowsMelt::Type AirWindowsMelt::pluginType = AirWindowsPlugin::modulation;
+AirWindowsMidSide::Type AirWindowsMidSide::pluginType = AirWindowsPlugin::utility;
 AirWindowsNC17::Type AirWindowsNC17::pluginType = AirWindowsPlugin::distortion;
 AirWindowsNoise::Type AirWindowsNoise::pluginType = AirWindowsPlugin::utility;
 AirWindowsNonlinearSpace::Type AirWindowsNonlinearSpace::pluginType = AirWindowsPlugin::reverb;
@@ -461,6 +463,9 @@ AirWindowsHombre::AirWindowsHombre (PluginCreationInfo info)
 
 AirWindowsMelt::AirWindowsMelt (PluginCreationInfo info)
     : AirWindowsPlugin (info, std::make_unique<airwindows::melt::Melt> (&callback)) {}
+
+AirWindowsMidSide::AirWindowsMidSide (PluginCreationInfo info)
+    : AirWindowsPlugin (info, std::make_unique<airwindows::midside::MidSide> (&callback)) {}
 
 AirWindowsNC17::AirWindowsNC17 (PluginCreationInfo info)
     : AirWindowsPlugin (info, std::make_unique<airwindows::nc17::NCSeventeen> (&callback)) {}
