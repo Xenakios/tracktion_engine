@@ -191,6 +191,7 @@ public:
 	
 	void showPluginMenu()
 	{
+		AudioBuffer<int> buf;
 		if (auto clip = getClip())
 		{
 			PopupMenu plugmenu;
@@ -228,7 +229,6 @@ public:
                         {
                             if (plugInst->getPluginType() == String(te::ExternalPlugin::xmlTypeName))
 								plugInst->showWindowExplicitly();
-							plugInst->
 							Logger::writeToLog(plugInst->state.toXmlString());
 							thumbnail.setFile(EngineHelpers::loopAroundClip(*clip)->getPlaybackFile());
                         }
