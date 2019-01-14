@@ -384,7 +384,7 @@ AuxSendPlugin* AudioTrack::getAuxSendPlugin (int bus)
 }
 
 //==============================================================================
-String AudioTrack::getNameForMidiNoteNumber (int note, int midiChannel) const
+String AudioTrack::getNameForMidiNoteNumber (int note, int midiChannel, bool preferSharp) const
 {
     jassert (midiChannel > 0);
     String s;
@@ -394,7 +394,7 @@ String AudioTrack::getNameForMidiNoteNumber (int note, int midiChannel) const
             return s;
 
     if (auto dest = output->getDestinationTrack())
-        return dest->getNameForMidiNoteNumber (note, midiChannel);
+        return dest->getNameForMidiNoteNumber (note, midiChannel, preferSharp);
 
     // try the master plugins..
     for (auto af : edit.getMasterPluginList())
@@ -402,10 +402,10 @@ String AudioTrack::getNameForMidiNoteNumber (int note, int midiChannel) const
             return s;
 
     if (auto mo = dynamic_cast<MidiOutputDevice*> (getOutput().getOutputDevice (true)))
-        return mo->getNameForMidiNoteNumber (note, midiChannel);
+        return mo->getNameForMidiNoteNumber (note, midiChannel, preferSharp);
 
     return midiChannel == 10 ? TRANS(MidiMessage::getRhythmInstrumentName (note))
-                             : MidiMessage::getMidiNoteName (note, true, true,
+                             : MidiMessage::getMidiNoteName (note, preferSharp, true,
                                                              edit.engine.getEngineBehaviour().getMiddleCOctave());
 }
 
