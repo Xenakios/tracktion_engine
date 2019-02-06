@@ -22,19 +22,27 @@ ExternalController::ExternalController (Engine& e, ControlSurface* c)  : engine 
     maxTrackNameChars = cs.numCharactersForTrackNames;
     needsBackChannel = cs.needsMidiBackChannel;
     needsChannel = cs.needsMidiChannel;
+    needsOSC = cs.needsOSCSocket;
     wantsClock = cs.wantsClock;
     followsTrackSelection = cs.followsTrackSelection;
     deletable = cs.deletable;
     auxBank = cs.wantsAuxBanks ? 0 : -1;
+    allowBankingOffEnd = cs.allowBankingOffEnd;
 
     inputDeviceName  = storage.getPropertyItem (SettingID::externControlIn, getName());
     outputDeviceName = storage.getPropertyItem (SettingID::externControlOut, getName());
+    
+    oscInputPort     = storage.getPropertyItem (SettingID::externOscInputPort, getName());
+    oscOutputPort    = storage.getPropertyItem (SettingID::externOscOutputPort, getName());
+    oscOutputAddr    = storage.getPropertyItem (SettingID::externOscOutputAddr, getName());
+
     showSelection    = storage.getPropertyItem (SettingID::externControlShowSelection, getName());
     selectionColour  = Colour::fromString (storage.getPropertyItem (SettingID::externControlSelectionColour, getName(),
                                                                     Colours::red.withHue (0.0f).withSaturation (0.7f).toString()).toString());
     enabled          = storage.getPropertyItem (SettingID::externControlEnable, getName());
 
     midiInOutDevicesChanged();
+    oscSettingsChanged();
 
     cs.initialiseDevice (isEnabled());
 
@@ -183,6 +191,9 @@ int ExternalController::getNumParameterControls() const noexcept
 
 void ExternalController::midiInOutDevicesChanged()
 {
+    if (! needsMidiChannel())
+        return;
+    
     auto& dm = engine.getDeviceManager();
 
     for (int i = dm.getNumMidiInDevices(); --i >= 0;)
@@ -220,6 +231,21 @@ void ExternalController::midiInOutDevicesChanged()
     updateDeviceState();
     changeParamBank (0);
 }
+    
+void ExternalController::oscSettingsChanged()
+{
+    if (! needsOSCSocket())
+        return;
+    
+    CRASH_TRACER
+    if (controlSurface != nullptr)
+        getControlSurface().initialiseDevice (isEnabled());
+    
+    getControlSurface().updateOSCSettings (oscInputPort, oscOutputPort, oscOutputAddr);
+    
+    updateDeviceState();
+    changeParamBank (0);
+}
 
 void ExternalController::setBackChannelDevice (const String& nameOfMidiOutput)
 {
@@ -236,6 +262,30 @@ void ExternalController::setBackChannelDevice (const String& nameOfMidiOutput)
     engine.getPropertyStorage().setPropertyItem (SettingID::externControlOut, getName(), outputDeviceName);
 
     midiInOutDevicesChanged();
+}
+    
+void ExternalController::setOSCInputPort (int port)
+{
+    oscInputPort = port;
+    
+    engine.getPropertyStorage().setPropertyItem (SettingID::externOscInputPort, getName(), oscInputPort);
+    oscSettingsChanged();
+}
+    
+void ExternalController::setOSCOutputPort (int port)
+{
+    oscOutputPort = port;
+    
+    engine.getPropertyStorage().setPropertyItem (SettingID::externOscOutputPort, getName(), oscOutputPort);
+    oscSettingsChanged();
+}
+    
+void ExternalController::setOSCOutputAddress (const juce::String addr)
+{
+    oscOutputAddr = addr;
+    
+    engine.getPropertyStorage().setPropertyItem (SettingID::externOscOutputAddr, getName(), oscOutputAddr);
+    oscSettingsChanged();
 }
 
 void ExternalController::setSelectionColour (Colour c)
@@ -427,7 +477,7 @@ void ExternalController::changeFaderBank (int delta, bool moveSelection)
                 selectedChannels.add(i);
 
             channelStart = jmin (jlimit (0, 127, channelStart + delta),
-                                 jmax (0, ecm.getNumChannelTracks() - getNumFaderChannels()));
+                                 jmax (0, ecm.getNumChannelTracks() - (allowBankingOffEnd ? 1 : getNumFaderChannels())));
 
             for (int i = channelStart; i < (channelStart + getNumFaderChannels()); ++i)
                 if (selectedChannels.contains(i))
@@ -487,8 +537,9 @@ void ExternalController::updateParamList()
             else
            #endif
             {
-                for (int i = 0; i < 2; ++i)
-                    possibleParams.add (nullptr);
+                if (getControlSurfaceIfType<CustomControlSurface>() == nullptr)
+                    for (int i = 0; i < 2; ++i)
+                        possibleParams.add (nullptr);
             }
 
             for (auto p : params)
@@ -654,12 +705,16 @@ void ExternalController::selectedPluginChanged()
             lastRegisteredSelectable = nullptr;
 
             if (auto sm = getExternalControllerManager().getSelectionManager())
-                lastRegisteredSelectable = sm->getSelectedObject(0);
+                lastRegisteredSelectable = sm->getSelectedObject (0);
 
             if (lastRegisteredSelectable != nullptr)
                 lastRegisteredSelectable->addSelectableListener (this);
+            
+            juce::String pluginName;
+            if (auto plugin = dynamic_cast<Plugin*> (lastRegisteredSelectable.get()))
+                pluginName = plugin->getName();
 
-            getControlSurface().currentSelectionChanged();
+            getControlSurface().currentSelectionChanged (pluginName);
             updateParameters();
             updateTrackSelectLights();
         }

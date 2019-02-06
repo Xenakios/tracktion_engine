@@ -53,6 +53,9 @@ public:
 
     virtual void initialiseDevice (bool connect) = 0;
     virtual void shutDownDevice() = 0;
+    
+    // If the device communicates via OSC, then this tells the device the new settings
+    virtual void updateOSCSettings (int /*oscInputPort*/, int /*oscOutputPort*/, juce::String /*oscOutputAddr*/) {}
 
     // most settings will be updated by the ExternalControllerManager, but this allows a device
     // a chance to do some extra stuff when it needs to refresh itself
@@ -166,7 +169,7 @@ public:
     virtual bool canSetEatsAllMessages()                { return false; }
     virtual void setEatsAllMessages(bool)               {}
     virtual bool canChangeSelectedPlugin()              { return true; }
-    virtual void currentSelectionChanged()              {}
+    virtual void currentSelectionChanged (juce::String) {}
 
     juce::String getSelectableDescription() override;
 
@@ -326,6 +329,9 @@ public:
     // does this driver need to be able to send MIDI messages back to the
     // controller as well as receive them?
     bool needsMidiBackChannel = false;
+        
+    // does this driver need to be able to communicate via OSC
+    bool needsOSCSocket = false;
 
     // device wants MIDI clock
     bool wantsClock = false;
@@ -336,6 +342,9 @@ public:
     // number of physical faders
     int numberOfFaderChannels = 0;
     int numCharactersForTrackNames = 0;
+    
+    // is banking to the right allowed to show empty tracks
+    bool allowBankingOffEnd = false;
 
     // number of labelled rotary dials that can control things like plugin parameters
     int numParameterControls = 0;
