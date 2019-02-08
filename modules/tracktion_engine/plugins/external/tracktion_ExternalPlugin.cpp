@@ -680,6 +680,9 @@ void ExternalPlugin::processingChanged()
         {
             fullyInitialised = false;
             initialiseFully();
+
+            if (auto t = getOwnerTrack())
+                t->refreshCurrentAutoParam();
         }
     }
     else
@@ -797,6 +800,7 @@ void ExternalPlugin::flushPluginStateToValueTree()
         else
             state.removeProperty (IDs::state, um);
 
+        const ScopedValueSetter<bool> svs (isFlushingLayoutToState, true);
         flushBusesLayoutToValueTree (*this, um);
     }
 }
