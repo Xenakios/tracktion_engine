@@ -428,20 +428,6 @@ namespace
             }
         }
     }
-
-    void flushBusesLayoutToValueTree (ExternalPlugin& plugin, UndoManager* um)
-    {
-        // Save buses layout
-        if (auto ap = plugin.getAudioPluginInstance())
-        {
-            auto mb = createBusesLayoutProperty (ap->getBusesLayout());
-
-            if (mb.getSize() > 0)
-                plugin.state.setProperty (IDs::layout, mb, um);
-            else
-                plugin.state.removeProperty (IDs::layout, um);
-        }
-    }
 }
 
 //==============================================================================
@@ -800,8 +786,25 @@ void ExternalPlugin::flushPluginStateToValueTree()
         else
             state.removeProperty (IDs::state, um);
 
-        const ScopedValueSetter<bool> svs (isFlushingLayoutToState, true);
-        flushBusesLayoutToValueTree (*this, um);
+        flushBusesLayoutToValueTree();
+    }
+}
+
+void ExternalPlugin::flushBusesLayoutToValueTree()
+{
+    const ScopedValueSetter<bool> svs (isFlushingLayoutToState, true);
+
+    // Save buses layout
+    if (auto ap = getAudioPluginInstance())
+    {
+        auto* um = getUndoManager();
+
+        auto mb = createBusesLayoutProperty (ap->getBusesLayout());
+
+        if (mb.getSize() > 0)
+            state.setProperty (IDs::layout, mb, um);
+        else
+            state.removeProperty (IDs::layout, um);
     }
 }
 
@@ -1448,8 +1451,7 @@ bool ExternalPlugin::setBusesLayout (juce::AudioProcessor::BusesLayout layout)
                 if (auto r = getOwnerRackType())
                     r->checkConnections();
 
-                const ScopedValueSetter<bool> svs (isFlushingLayoutToState, true);
-                flushBusesLayoutToValueTree (*this, getUndoManager());
+                flushBusesLayoutToValueTree();
             }
 
             return true;
@@ -1479,8 +1481,7 @@ bool ExternalPlugin::setBusLayout (AudioChannelSet set, bool isInput, int busInd
                     if (auto r = getOwnerRackType())
                         r->checkConnections();
 
-                    const ScopedValueSetter<bool> svs (isFlushingLayoutToState, true);
-                    flushBusesLayoutToValueTree (*this, getUndoManager());
+                    flushBusesLayoutToValueTree();
                 }
 
                 return true;
@@ -1586,7 +1587,6 @@ void ExternalPlugin::buildParameterTree (const VSTXML::Group* group,
 void ExternalPlugin::deleteFromParent()
 {
     CRASH_TRACER_PLUGIN (getDebugName());
-    hideWindowForShutdown();
     Plugin::deleteFromParent();
 }
 
