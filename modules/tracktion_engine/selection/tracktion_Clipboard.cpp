@@ -78,6 +78,23 @@ bool Clipboard::ContentType::pasteIntoEdit (const EditPastingOptions&) const    
 //==============================================================================
 Clipboard::ProjectItems::ProjectItems() {}
 Clipboard::ProjectItems::~ProjectItems() {}
+    
+static AudioTrack* getOrInsertAudioTrackNearestIndex (Edit& edit, int trackIndex)
+{
+    int i = 0;
+    
+    // find the next audio track on or after the given index..
+    for (auto t : getAllTracks (edit))
+    {
+        if (i >= trackIndex)
+            if (auto at = dynamic_cast<AudioTrack*> (t))
+                return at;
+        
+        ++i;
+    }
+    
+    return edit.insertNewAudioTrack (TrackInsertPoint (nullptr, getAllTracks (edit).getLast()), nullptr).get();
+};
 
 static double pasteMIDIFileIntoEdit (Edit& edit, const File& midiFile, int& targetTrackIndex,
                                      double startTime, bool importTempoChanges)
@@ -158,7 +175,7 @@ static double pasteMIDIFileIntoEdit (Edit& edit, const File& midiFile, int& targ
             if (list->state.isValid())
                 clipState.addChild (list->state, -1, nullptr);
 
-            if (auto at = edit.getOrInsertAudioTrackAt (targetTrackIndex))
+            if (auto at = getOrInsertAudioTrackNearestIndex (edit, targetTrackIndex))
             {
                 auto time = tempoSequence.beatsToTime ({ startBeat, endBeat });
 
@@ -262,10 +279,10 @@ static void askUserAboutProjectItemPastingOptions (const Clipboard::ProjectItems
     }
     else if (numAudioClips == 1 && numAudioClipsWithBWAV == 1)
     {
-        options.snapBWavsToOriginalTime = ui.showOkCancelAlertBox (TRANS("BWAV Clip"),
-                                                                   TRANS("Do you want clip placed at BWAV timestamp or cursor position?"),
-                                                                   TRANS("BWAV timestamp"),
-                                                                   TRANS("Cursor position"));
+        options.snapBWavsToOriginalTime = ! ui.showOkCancelAlertBox (TRANS("BWAV Clip"),
+                                                                     TRANS("Do you want clip placed at BWAV timestamp or cursor position?"),
+                                                                     TRANS("BWAV timestamp"),
+                                                                     TRANS("Cursor position"));
     }
 }
 
@@ -323,7 +340,7 @@ bool Clipboard::ProjectItems::pasteIntoEdit (const EditPastingOptions& options) 
 
             if (file.exists())
             {
-                if (auto targetTrack = options.edit.getOrInsertAudioTrackAt (targetTrackIndex))
+                if (auto targetTrack = getOrInsertAudioTrackNearestIndex (options.edit, targetTrackIndex))
                 {
                     if (sourceItem->isMidi())
                     {

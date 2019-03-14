@@ -277,13 +277,17 @@ public:
     juce::OwnedArray<MODEnvParams> modEnvParams;
     
     //==============================================================================
-    juce::CachedValue<float> ampAttackValue, ampDecayValue, ampSustainValue, ampReleaseValue;
-    juce::CachedValue<float> filterAttackValue, filterDecayValue, filterSustainValue, filterReleaseValue, filterFreqValue, filterResonanceValue, filterAmountValue, filterKeyValue;
+    juce::CachedValue<float> ampAttackValue, ampDecayValue, ampSustainValue, ampReleaseValue, ampVelocityValue;
+    juce::CachedValue<float> filterAttackValue, filterDecayValue, filterSustainValue, filterReleaseValue, filterFreqValue,
+                             filterResonanceValue, filterAmountValue, filterKeyValue, filterVelocityValue;
     juce::CachedValue<int> filterTypeValue, filterSlopeValue;
+    juce::CachedValue<bool> ampAnalogValue;
     
-    AutomatableParameter::Ptr ampAttack, ampDecay, ampSustain, ampRelease;
-    AutomatableParameter::Ptr filterAttack, filterDecay, filterSustain, filterRelease, filterFreq, filterResonance, filterAmount, filterKey;
+    AutomatableParameter::Ptr ampAttack, ampDecay, ampSustain, ampRelease, ampVelocity;
+    AutomatableParameter::Ptr filterAttack, filterDecay, filterSustain, filterRelease, filterFreq, filterResonance, filterAmount, filterKey, filterVelocity;
 
+    juce::CachedValue<bool> distortionOnValue, reverbOnValue, delayOnValue, chorusOnValue;
+    
     juce::CachedValue<float> distortionValue;
     AutomatableParameter::Ptr distortion;
     
@@ -391,7 +395,7 @@ private:
     std::unordered_map<AutomatableParameter*, ValueSmoother<float>> smoothers;
     
     juce::CriticalSection voicesLock;
-    bool runReverb = false, flushingState = false;
+    bool flushingState = false;
     float currentTempo = 0.0f;
     LevelMeasurer levelMeasurer;
     DbTimePair levels[2];
