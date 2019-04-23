@@ -203,7 +203,7 @@ struct ProjectItemPastingOptions
 {
     bool shouldImportTempoChangesFromMIDI = false;
     bool separateTracks = false;
-    bool snapBWavsToOriginalTime = true;
+    bool snapBWavsToOriginalTime = false;
 };
 
 static void askUserAboutProjectItemPastingOptions (const Clipboard::ProjectItems& items, UIBehaviour& ui,
@@ -251,7 +251,7 @@ static void askUserAboutProjectItemPastingOptions (const Clipboard::ProjectItems
         {
            #if JUCE_MODAL_LOOPS_PERMITTED
             ToggleButton toggle (TRANS("Snap to BWAV"));
-            toggle.setSize(200,20);
+            toggle.setSize (200, 20);
 
             std::unique_ptr<AlertWindow> aw (LookAndFeel::getDefaultLookAndFeel().createAlertWindow (TRANS("Add multiple files"),
                                                                                                      TRANS("Do you want to add multiple files to one track or to separate tracks?"),
@@ -279,10 +279,10 @@ static void askUserAboutProjectItemPastingOptions (const Clipboard::ProjectItems
     }
     else if (numAudioClips == 1 && numAudioClipsWithBWAV == 1)
     {
-        options.snapBWavsToOriginalTime = ! ui.showOkCancelAlertBox (TRANS("BWAV Clip"),
-                                                                     TRANS("Do you want clip placed at BWAV timestamp or cursor position?"),
-                                                                     TRANS("BWAV timestamp"),
-                                                                     TRANS("Cursor position"));
+        options.snapBWavsToOriginalTime = ui.showOkCancelAlertBox (TRANS("BWAV Clip"),
+                                                                   TRANS("Do you want clip placed at BWAV timestamp or cursor position?"),
+                                                                   TRANS("BWAV timestamp"),
+                                                                   TRANS("Cursor position"));
     }
 }
 
@@ -306,6 +306,8 @@ bool Clipboard::ProjectItems::pasteIntoEdit (const EditPastingOptions& options) 
 
     ProjectItemPastingOptions pastingOptions;
 
+    pastingOptions.separateTracks = options.preferredLayout == FileDragList::vertical;
+    
     if (! options.silent)
         askUserAboutProjectItemPastingOptions (*this, ui, pastingOptions);
 
@@ -349,16 +351,25 @@ bool Clipboard::ProjectItems::pasteIntoEdit (const EditPastingOptions& options) 
                     }
                     else if (sourceItem->isWave())
                     {
+                        sourceItem->verifyLength();
+                        jassert (sourceItem->getLength() > 0);
+                        
                         if (auto newClip = targetTrack->insertWaveClip (sourceItem->getName(), sourceItem->getID(),
                                                                         { { startTime, startTime + sourceItem->getLength() }, 0.0 }, false))
                         {
                             newClipEndTime = newClip->getPosition().getEnd();
                             itemsAdded.add (newClip.get());
+                            
+                            if (pastingOptions.snapBWavsToOriginalTime)
+                                newClip->snapToOriginalBWavTime();
                         }
 
                     }
                     else if (sourceItem->isEdit())
                     {
+                        sourceItem->verifyLength();
+                        jassert (sourceItem->getLength() > 0);
+                        
                         if (auto newClip = targetTrack->insertEditClip ({ startTime, startTime + sourceItem->getLength() },
                                                                         sourceItem->getID()))
                         {

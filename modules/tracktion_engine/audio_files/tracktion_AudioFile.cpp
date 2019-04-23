@@ -316,6 +316,7 @@ AudioFileInfo::AudioFileInfo (const AudioFile& file, juce::AudioFormatReader* re
 {
     if (reader != nullptr)
     {
+        wasParsedOk     = true;
         sampleRate      = reader->sampleRate;
         lengthInSamples = reader->lengthInSamples;
         numChannels     = (int) reader->numChannels;
@@ -328,6 +329,7 @@ AudioFileInfo::AudioFileInfo (const AudioFile& file, juce::AudioFormatReader* re
     }
     else
     {
+        wasParsedOk = false;
         format = nullptr;
         sampleRate = 0;
         lengthInSamples = 0;
@@ -425,7 +427,7 @@ struct AudioFileManager::KnownFile
         : file (f), info (AudioFileInfo::parse (file))
     {
     }
-
+    
     AudioFile file;
     AudioFileInfo info;
 
@@ -611,7 +613,8 @@ AudioFileInfo AudioFileManager::getInfo (const AudioFile& file)
 
 bool AudioFileManager::checkFileTime (KnownFile& f)
 {
-    if (f.info.fileModificationTime != f.file.getFile().getLastModificationTime())
+    if (! f.info.wasParsedOk
+        || f.info.fileModificationTime != f.file.getFile().getLastModificationTime())
     {
         f.info = AudioFileInfo::parse (f.file);
         return true;
