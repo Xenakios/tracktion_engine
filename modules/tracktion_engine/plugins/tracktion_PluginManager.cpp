@@ -19,7 +19,7 @@ static const char* commandLineUID = "PluginScan";
 MemoryBlock createScanMessage (const juce::XmlElement& xml)
 {
     MemoryOutputStream mo;
-    xml.writeToStream (mo, {}, true, false);
+    xml.writeTo (mo, juce::XmlElement::TextFormat().withoutHeader().singleLine());
     return mo.getMemoryBlock();
 }
 
@@ -202,7 +202,7 @@ struct PluginScanSlaveProcess  : public ChildProcessSlave,
                 format->findAllTypesForFile (found, fileOrIdentifier);
 
                 for (auto pd : found)
-                    result.addChildElement (pd->createXml());
+                    result.addChildElement (pd->createXml().release());
 
                 break;
             }
@@ -402,8 +402,13 @@ PluginManager::BuiltInType::BuiltInType (const juce::String& t) : type (t) {}
 PluginManager::BuiltInType::~BuiltInType() {}
 
 //==============================================================================
-PluginManager::PluginManager (Engine& e)  : engine (e)
+PluginManager::PluginManager (Engine& e)
+    : engine (e)
 {
+    createPluginInstance = [this] (const PluginDescription& description, double rate, int blockSize, String& errorMessage)
+                           {
+                               return std::unique_ptr<AudioPluginInstance> (pluginFormatManager.createPluginInstance (description, rate, blockSize, errorMessage));
+                           };
 }
 
 void PluginManager::initialise()
@@ -434,7 +439,31 @@ void PluginManager::initialise()
     createBuiltInType<ReWirePlugin>();
    #endif
 
-   #if TRACKTION_AIR_WINDOWS
+    initialised = true;
+    pluginFormatManager.addDefaultFormats();
+
+    if (usesSeparateProcessForScanning())
+        knownPluginList.setCustomScanner (new CustomScanner (engine));
+    else
+        knownPluginList.setCustomScanner (new BasicScanner (engine));
+
+    auto xml = engine.getPropertyStorage().getXmlProperty (getPluginListPropertyName());
+
+    if (xml != nullptr)
+        knownPluginList.recreateFromXml (*xml);
+
+    knownPluginList.addChangeListener (this);
+}
+
+PluginManager::~PluginManager()
+{
+    knownPluginList.removeChangeListener (this);
+    cleanUpDanglingPlugins();
+}
+    
+#if TRACKTION_AIR_WINDOWS
+void PluginManager::initialiseAirWindows()
+{
     createBuiltInType<AirWindowsAcceleration>();
     createBuiltInType<AirWindowsADClip7>();
     createBuiltInType<AirWindowsADT>();
@@ -498,29 +527,8 @@ void PluginManager::initialise()
     createBuiltInType<AirWindowsVariMu>();
     createBuiltInType<AirWindowsVoiceOfTheStarship>();
     createBuiltInType<AirWindowsWider>();
-   #endif
-
-    initialised = true;
-    pluginFormatManager.addDefaultFormats();
-
-    if (usesSeparateProcessForScanning())
-        knownPluginList.setCustomScanner (new CustomScanner (engine));
-    else
-        knownPluginList.setCustomScanner (new BasicScanner (engine));
-
-    auto xml = engine.getPropertyStorage().getXmlProperty (getPluginListPropertyName());
-
-    if (xml != nullptr)
-        knownPluginList.recreateFromXml (*xml);
-
-    knownPluginList.addChangeListener (this);
 }
-
-PluginManager::~PluginManager()
-{
-    knownPluginList.removeChangeListener (this);
-    cleanUpDanglingPlugins();
-}
+#endif
 
 void PluginManager::changeListenerCallback (ChangeBroadcaster*)
 {
