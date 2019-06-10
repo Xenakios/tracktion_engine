@@ -437,8 +437,8 @@ ExternalPlugin::ExternalPlugin (PluginCreationInfo info)  : Plugin (info)
 
     auto um = getUndoManager();
 
-    addAutomatableParameter (dryGain = new PluginWetDryAutomatableParam ("dry level", TRANS("Dry Level"), *this));
-    addAutomatableParameter (wetGain = new PluginWetDryAutomatableParam ("wet level", TRANS("Wet Level"), *this));
+    dryGain = new PluginWetDryAutomatableParam ("dry level", TRANS("Dry Level"), *this);
+    wetGain = new PluginWetDryAutomatableParam ("wet level", TRANS("Wet Level"), *this);
 
     dryValue.referTo (state, IDs::dry, um);
     wetValue.referTo (state, IDs::wet, um, 1.0f);
@@ -488,6 +488,21 @@ void ExternalPlugin::initialiseFully()
     }
 }
 
+void ExternalPlugin::forceFullReinitialise()
+{
+    TransportControl::ScopedPlaybackRestarter restarter (edit.getTransport());
+    windowState->recreateWindowIfShowing();
+    edit.getTransport().stop (false, true);
+    fullyInitialised = false;
+    initialiseFully();
+    changed();
+    edit.restartPlayback();
+    SelectionManager::refreshAllPropertyPanelsShowing (*this);
+
+    if (auto t = getOwnerTrack())
+        t->refreshCurrentAutoParam();
+}
+
 void ExternalPlugin::updateDebugName()
 {
     debugName = desc.name + " (" + desc.pluginFormatName + ")";
@@ -497,7 +512,11 @@ void ExternalPlugin::buildParameterList()
 {
     CRASH_TRACER_PLUGIN (getDebugName());
     autoParamForParamNumbers.clear();
+    clearParameterList();
     std::unordered_map<std::string, int> alreadyUsedParamNames;
+
+    addAutomatableParameter (dryGain);
+    addAutomatableParameter (wetGain);
 
     if (pluginInstance)
     {
@@ -511,7 +530,7 @@ void ExternalPlugin::buildParameterList()
 
             if (parameter->isAutomatable() && ! isParameterBlacklisted (*this, *pluginInstance, *parameter))
             {
-                String nm (parameter->getName (1024));
+                auto nm = parameter->getName (1024);
 
                 if (nm.isNotEmpty())
                 {
@@ -558,25 +577,25 @@ void ExternalPlugin::buildParameterList()
     buildParameterTree();
 }
 
-const PluginDescription* ExternalPlugin::findDescForUID (int uid) const
+std::unique_ptr<PluginDescription> ExternalPlugin::findDescForUID (int uid) const
 {
     if (uid != 0)
-        for (auto d : engine.getPluginManager().knownPluginList)
-            if (d->uid == uid)
-                return d;
+        for (auto d : engine.getPluginManager().knownPluginList.getTypes())
+            if (d.uid == uid)
+                return std::make_unique<PluginDescription> (d);
 
     return {};
 }
 
-const PluginDescription* ExternalPlugin::findDescForFileOrID (const String& fileOrID) const
+std::unique_ptr<PluginDescription> ExternalPlugin::findDescForFileOrID (const String& fileOrID) const
 {
     if (fileOrID.isNotEmpty())
     {
         auto& pm = engine.getPluginManager();
 
-        for (auto d : pm.knownPluginList)
-            if (d->fileOrIdentifier == fileOrID)
-                return d;
+        for (auto d : pm.knownPluginList.getTypes())
+            if (d.fileOrIdentifier == fileOrID)
+                return std::make_unique<PluginDescription> (d);
 
         return engine.getEngineBehaviour().findDescriptionForFileOrID (fileOrID);
     }
@@ -584,72 +603,72 @@ const PluginDescription* ExternalPlugin::findDescForFileOrID (const String& file
     return {};
 }
 
-static const PluginDescription* findDescForName (Engine& engine, const String& name)
+static std::unique_ptr<PluginDescription> findDescForName (Engine& engine, const String& name)
 {
     if (name.isEmpty())
         return {};
 
     auto& pm = engine.getPluginManager();
 
-    auto findName = [&pm] (const String& nameToFind) -> const PluginDescription*
+    auto findName = [&pm] (const String& nameToFind) -> std::unique_ptr<PluginDescription>
     {
-        for (auto* d : pm.knownPluginList)
-            if (d->name == nameToFind)
-                return d;
+        for (auto d : pm.knownPluginList.getTypes())
+            if (d.name == nameToFind)
+                return std::make_unique<PluginDescription> (d);
 
         return {};
     };
 
-    if (auto* p = findName (name))
+    if (auto p = findName (name))
         return p;
 
    #if JUCE_64BIT
-    if (auto* p = findName (name + " (64 bit)"))
+    if (auto p = findName (name + " (64 bit)"))
         return p;
 
-    if (auto* p = findName (name + " (64-bit)"))
+    if (auto p = findName (name + " (64-bit)"))
         return p;
    #endif
 
     return {};
 }
 
-const PluginDescription* ExternalPlugin::findMatchingPlugin() const
+std::unique_ptr<PluginDescription> ExternalPlugin::findMatchingPlugin() const
 {
     CRASH_TRACER
     auto& pm = engine.getPluginManager();
 
-    if (auto* p = pm.knownPluginList.getTypeForIdentifierString (desc.createIdentifierString()))
+    if (auto p = pm.knownPluginList.getTypeForIdentifierString (desc.createIdentifierString()))
         return p;
 
     if (desc.pluginFormatName.isEmpty())
     {
-        if (auto* p = pm.knownPluginList.getTypeForIdentifierString ("VST" + desc.createIdentifierString()))
+        if (auto p = pm.knownPluginList.getTypeForIdentifierString ("VST" + desc.createIdentifierString()))
             return p;
 
-        if (auto* p = pm.knownPluginList.getTypeForIdentifierString ("AudioUnit" + desc.createIdentifierString()))
+        if (auto p = pm.knownPluginList.getTypeForIdentifierString ("AudioUnit" + desc.createIdentifierString()))
             return p;
     }
 
-    if (auto* p = findDescForFileOrID (desc.fileOrIdentifier))
+    if (auto p = findDescForFileOrID (desc.fileOrIdentifier))
         return p;
 
-    if (auto* p = findDescForUID (desc.uid))
+    if (auto p = findDescForUID (desc.uid))
         return p;
 
-    if (auto* p = findDescForName (engine, desc.name))
+    if (auto p = findDescForName (engine, desc.name))
         return p;
 
-    for (auto* d : pm.knownPluginList)
-        if (d->name == desc.name)
-            return d;
+    for (auto d : pm.knownPluginList.getTypes())
+        if (d.name == desc.name)
+            return std::make_unique<PluginDescription> (d);
 
-    for (auto* d : pm.knownPluginList)
-        if (File::createFileWithoutCheckingPath (d->fileOrIdentifier).getFileNameWithoutExtension() == desc.name)
-            return d;
+    for (auto d : pm.knownPluginList.getTypes())
+        if (File::createFileWithoutCheckingPath (d.fileOrIdentifier).getFileNameWithoutExtension() == desc.name)
+            return std::make_unique<PluginDescription> (d);
 
     if (desc.uid == 0x4d44416a) // old JX-10: hack to update to JX-16
-        if (auto* p = findDescForUID (0x4D44414A))
+        if (auto p = findDescForUID (0x4D44414A))
             return p;
 
     return {};
@@ -662,21 +681,12 @@ void ExternalPlugin::processingChanged()
 
     if (processing)
     {
-        if (! pluginInstance)
-        {
-            fullyInitialised = false;
-            initialiseFully();
-
-            if (auto t = getOwnerTrack())
-                t->refreshCurrentAutoParam();
-        }
+        if (pluginInstance == nullptr)
+            forceFullReinitialise();
     }
     else
     {
-        // Remove all the parameters except the wet/dry as these are created in the constructor
-        for (int i = autoParamForParamNumbers.size(); --i >= 0;)
-            deleteParameter (autoParamForParamNumbers.getUnchecked (i));
-
+        clearParameterList();
         autoParamForParamNumbers.clear();
         getParameterTree().clear();
 
@@ -686,21 +696,21 @@ void ExternalPlugin::processingChanged()
 
 void ExternalPlugin::doFullInitialisation()
 {
-    if (processing && pluginInstance == nullptr && edit.shouldLoadPlugins())
+    if (auto foundDesc = findMatchingPlugin())
     {
-        if (auto* foundDesc = findMatchingPlugin())
-        {
-            desc = *foundDesc;
-            identiferString = desc.createIdentifierString();
-            updateDebugName();
+        desc = *foundDesc;
+        identiferString = desc.createIdentifierString();
+        updateDebugName();
 
+        if (processing && pluginInstance == nullptr && edit.shouldLoadPlugins())
+        {
             if (isDisabled())
                 return;
 
             CRASH_TRACER_PLUGIN (getDebugName());
             String error;
 
-            callBlocking ([this, &error, foundDesc]
+            callBlocking ([this, &error, &foundDesc]
             {
                 CRASH_TRACER_PLUGIN (getDebugName());
                 error = createPluginInstance (*foundDesc);
@@ -1613,6 +1623,27 @@ void ExternalPlugin::valueTreePropertyChanged (ValueTree& v, const juce::Identif
     {
         Plugin::valueTreePropertyChanged (v, id);
     }
+}
+
+//==============================================================================
+PluginWetDryAutomatableParam::PluginWetDryAutomatableParam (const juce::String& xmlTag, const juce::String& name, Plugin& owner)
+    : AutomatableParameter (xmlTag, name, owner, { 0.0f, 1.0f })
+{
+}
+
+PluginWetDryAutomatableParam::~PluginWetDryAutomatableParam()
+{
+    notifyListenersOfDeletion();
+}
+
+juce::String PluginWetDryAutomatableParam::valueToString (float value)
+{
+    return juce::Decibels::toString (juce::Decibels::gainToDecibels (value), 1);
+}
+
+float PluginWetDryAutomatableParam::stringToValue (const juce::String& s)
+{
+    return dbStringToDb (s);
 }
 
 }

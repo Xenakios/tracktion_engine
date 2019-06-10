@@ -43,7 +43,7 @@ public:
     Plugin::Ptr createNewPlugin (Edit&, const juce::ValueTree&);
     Plugin::Ptr createNewPlugin (Edit&, const juce::String& type, const juce::PluginDescription&);
 
-    juce::Array<juce::PluginDescription*> getARACompatiblePlugDescriptions();
+    juce::Array<juce::PluginDescription> getARACompatiblePlugDescriptions();
 
     juce::AudioPluginFormatManager pluginFormatManager;
     juce::KnownPluginList knownPluginList;
@@ -111,6 +111,7 @@ public:
     //==============================================================================
     Plugin::Ptr getPluginFor (EditItemID pluginID) const;
     Plugin::Ptr getPluginFor (const juce::ValueTree&) const;
+    Plugin::Ptr getPluginFor (juce::AudioProcessor&) const;
     Plugin::Ptr getOrCreatePluginFor (const juce::ValueTree&);
     Plugin::Ptr createNewPlugin (const juce::ValueTree&);
     Plugin::Ptr createNewPlugin (const juce::String& type, const juce::PluginDescription&);
